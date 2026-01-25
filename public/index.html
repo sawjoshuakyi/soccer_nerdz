@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PredictAI - Elite League Prediction Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #00ff88;
+            --secondary: #00d4ff;
+            --dark-bg: #0a0e1a;
+            --card-bg: #131825;
+            --border: #1e2841;
+            --text-primary: #ffffff;
+            --text-secondary: #8b92b0;
+            --danger: #ff3366;
+            --warning: #ffaa00;
+            --success: #00ff88;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            margin-bottom: 60px;
+            text-align: center;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 56px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -2px;
+            margin-bottom: 12px;
+        }
+
+        .tagline {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 0;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--dark-bg);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            background: var(--card-bg);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .tab-content {
+            padding: 32px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .league-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .league-logo {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            background: var(--dark-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .league-info h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .league-info p {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        .fixture-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .fixture-item {
+            background: var(--dark-bg);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .fixture-item:hover {
+            border-color: var(--primary);
+            transform: translateX(4px);
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.15);
+        }
+
+        .fixture-teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .team {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .team.away {
+            flex-direction: row-reverse;
+            text-align: right;
+        }
+
+        .team-logo {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+        }
+
+        .team-name {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .vs-separator {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--text-secondary);
+            padding: 0 20px;
+        }
+
+        .fixture-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .fixture-date {
+            display: flex;
+            gap: 16px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'Space Mono', monospace;
+            letter-spacing: 1px;
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--secondary);
+            border: 1px solid var(--secondary);
+        }
+
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-container {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loading-container .loader {
+            width: 48px;
+            height: 48px;
+            border-width: 4px;
+            margin: 0 auto 20px;
+        }
+
+        .error-message {
+            background: rgba(255, 51, 102, 0.1);
+            border: 2px solid var(--danger);
+            border-radius: 12px;
+            padding: 20px;
+            color: var(--danger);
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .prediction-output {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.05), rgba(0, 212, 255, 0.05));
+            border: 2px solid var(--primary);
+            border-radius: 16px;
+            padding: 40px;
+            margin-top: 32px;
+        }
+
+        .prediction-header {
+            text-align: center;
+            padding-bottom: 32px;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 32px;
+        }
+
+        .prediction-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+
+        .prediction-match {
+            font-size: 18px;
+            color: var(--text-secondary);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .prediction-content {
+            line-height: 1.9;
+            font-size: 15px;
+        }
+
+        .prediction-content h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        .prediction-content h3 {
+            font-weight: 700;
+            font-size: 19px;
+            margin-top: 28px;
+            margin-bottom: 14px;
+            color: #ffffff;
+        }
+
+        .prediction-content p {
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+
+        .prediction-content strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .prediction-loading {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .prediction-loading .loader {
+            width: 56px;
+            height: 56px;
+            border-width: 5px;
+            margin: 0 auto 24px;
+        }
+
+        .loading-stage {
+            margin-top: 12px;
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+            color: var(--primary);
+        }
+
+        .loading-progress {
+            width: 100%;
+            max-width: 400px;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            margin: 24px auto 0;
+            overflow: hidden;
+        }
+
+        .loading-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            animation: progress 3s ease-in-out forwards;
+        }
+
+        @keyframes progress {
+            to { width: 100%; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 36px;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1 1 50%;
+                font-size: 11px;
+            }
+            
+            .team-name {
+                font-size: 15px;
+            }
+            
+            .fixture-meta {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Autistic Nerdz</div>
+            <div class="tagline">Elite League Prediction Engine</div>
+        </header>
+
+        <div class="card">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('epl')">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</button>
+                <button class="tab" onclick="switchTab('bundesliga')">🇩🇪 Bundesliga</button>
+                <button class="tab" onclick="switchTab('seriea')">🇮🇹 Serie A</button>
+                <button class="tab" onclick="switchTab('laliga')">🇪🇸 La Liga</button>
+            </div>
+
+            <div id="epl" class="tab-content active">
+                <div class="league-header">
+                    <div class="league-logo">⚽</div>
+                    <div class="league-info">
+                        <h2>Premier League</h2>
+                        <p>England • Top Division</p>
+                    </div>
+                </div>
+                <div id="epl-fixtures"></div>
+            </div>
+
+            <div id="bundesliga" class="tab-content">
+                <div class="league-header">
+                    <div class="league-logo">⚽</div>
+                    <div class="league-info">
+                        <h2>Bundesliga</h2>
+                        <p>Germany • Top Division</p>
+                    </div>
+                </div>
+                <div id="bundesliga-fixtures"></div>
+            </div>
+
+            <div id="seriea" class="tab-content">
+                <div class="league-header">
+                    <div class="league-logo">⚽</div>
+                    <div class="league-info">
+                        <h2>Serie A</h2>
+                        <p>Italy • Top Division</p>
+                    </div>
+                </div>
+                <div id="seriea-fixtures"></div>
+            </div>
+
+            <div id="laliga" class="tab-content">
+                <div class="league-header">
+                    <div class="league-logo">⚽</div>
+                    <div class="league-info">
+                        <h2>La Liga</h2>
+                        <p>Spain • Top Division</p>
+                    </div>
+                </div>
+                <div id="laliga-fixtures"></div>
+            </div>
+        </div>
+
+        <div id="predictionContainer"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+        let currentLeague = 'epl';
+
+        // Initialize: Load EPL fixtures on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFixtures('epl');
+        });
+
+        function switchTab(leagueKey) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(leagueKey).classList.add('active');
+
+            currentLeague = leagueKey;
+
+            // Load fixtures
+            loadFixtures(leagueKey);
+        }
+
+        async function loadFixtures(leagueKey) {
+            const container = document.getElementById(`${leagueKey}-fixtures`);
+            
+            // Check if already loaded
+            if (container.innerHTML && !container.innerHTML.includes('loading-container')) {
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="loading-container">
+                    <div class="loader"></div>
+                    <p style="color: var(--text-secondary); margin-top: 16px;">Loading upcoming fixtures...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/fixtures/${leagueKey}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const fixtures = await response.json();
+
+                if (!fixtures || fixtures.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📅</div>
+                            <p>No upcoming fixtures found</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                displayFixtures(leagueKey, fixtures);
+
+            } catch (error) {
+                console.error('Error loading fixtures:', error);
+                container.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error:</strong> ${error.message}<br>
+                        Make sure the backend server is running on port 3000
+                    </div>
+                `;
+            }
+        }
+
+        function displayFixtures(leagueKey, fixtures) {
+            const container = document.getElementById(`${leagueKey}-fixtures`);
+            
+            const html = `
+                <div class="fixture-list">
+                    ${fixtures.map(fixture => `
+                        <div class="fixture-item" onclick='predictMatch(${JSON.stringify(fixture).replace(/'/g, "&apos;")})'>
+                            <div class="fixture-teams">
+                                <div class="team">
+                                    <img src="${fixture.teams.home.logo}" alt="${fixture.teams.home.name}" class="team-logo">
+                                    <span class="team-name">${fixture.teams.home.name}</span>
+                                </div>
+                                <span class="vs-separator">VS</span>
+                                <div class="team away">
+                                    <img src="${fixture.teams.away.logo}" alt="${fixture.teams.away.name}" class="team-logo">
+                                    <span class="team-name">${fixture.teams.away.name}</span>
+                                </div>
+                            </div>
+                            <div class="fixture-meta">
+                                <div class="fixture-date">
+                                    <span>📅 ${new Date(fixture.fixture.date).toLocaleDateString('en-US', { 
+                                        weekday: 'short',
+                                        month: 'short', 
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                    })}</span>
+                                    <span>🕐 ${new Date(fixture.fixture.date).toLocaleTimeString('en-US', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit'
+                                    })}</span>
+                                    <span>🏟️ ${fixture.fixture.venue.name || 'TBD'}</span>
+                                </div>
+                                <span class="status-badge">UPCOMING</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        async function predictMatch(fixture) {
+            const container = document.getElementById('predictionContainer');
+            container.innerHTML = `
+                <div class="prediction-output">
+                    <div class="prediction-loading">
+                        <div class="loader"></div>
+                        <h3 style="font-family: 'Orbitron', sans-serif; font-size: 24px; margin-bottom: 8px;">Comprehensive Data Collection</h3>
+                        <p class="loading-stage">Fetching team stats, standings, injuries, squads, player data, H2H history...</p>
+                        <div class="loading-progress"><div class="loading-bar"></div></div>
+                    </div>
+                </div>
+            `;
+            container.scrollIntoView({ behavior: 'smooth' });
+
+            try {
+                // Step 1: Fetch match data from backend
+                const matchDataResponse = await fetch(
+                    `${API_BASE_URL}/match-data/${fixture.fixture.id}?homeTeamId=${fixture.teams.home.id}&awayTeamId=${fixture.teams.away.id}&leagueId=${fixture.league.id}`
+                );
+
+                if (!matchDataResponse.ok) {
+                    throw new Error('Failed to fetch match data');
+                }
+
+                const matchData = await matchDataResponse.json();
+
+                // Update loading message
+                container.innerHTML = `
+                    <div class="prediction-output">
+                        <div class="prediction-loading">
+                            <div class="loader"></div>
+                            <h3 style="font-family: 'Orbitron', sans-serif; font-size: 24px; margin-bottom: 8px;">Elite AI Analysis Engine</h3>
+                            <p class="loading-stage">Analyzing formations, injuries, player form, tactical patterns, league context...</p>
+                            <div class="loading-progress"><div class="loading-bar"></div></div>
+                        </div>
+                    </div>
+                `;
+
+                // Step 2: Generate prediction
+                const predictionResponse = await fetch(`${API_BASE_URL}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ fixture, matchData })
+                });
+
+                if (!predictionResponse.ok) {
+                    throw new Error('Failed to generate prediction');
+                }
+
+                const predictionData = await predictionResponse.json();
+                displayPrediction(fixture, predictionData.prediction);
+
+            } catch (error) {
+                console.error('Error predicting match:', error);
+                container.innerHTML = `
+                    <div class="prediction-output">
+                        <div class="error-message">
+                            <strong>Prediction Error:</strong> ${error.message}<br>
+                            Make sure the backend server is running and properly configured
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function displayPrediction(fixture, predictionText) {
+            let formattedText = predictionText
+                .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/^\d+\.\s\*\*(.+?)\*\*/gm, '<h3>$1</h3>');
+
+            const html = `
+                <div class="prediction-output">
+                    <div class="prediction-header">
+                        <div class="prediction-title">Match Prediction Report</div>
+                        <div class="prediction-match">
+                            ${fixture.teams.home.name} vs ${fixture.teams.away.name}<br>
+                            ${fixture.league.name} • ${new Date(fixture.fixture.date).toLocaleDateString('en-US', { 
+                                weekday: 'long',
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric'
+                            })}
+                        </div>
+                    </div>
+                    <div class="prediction-content">
+                        <p>${formattedText}</p>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('predictionContainer').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

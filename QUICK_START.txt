@@ -1,0 +1,126 @@
+🚀 QUICK SETUP GUIDE - Soccer Prediction Engine
+================================================
+
+⚡ Fast Setup (5 minutes)
+--------------------------
+
+1. INSTALL NODE.JS
+   Download from: https://nodejs.org/
+   Required: v14 or higher
+
+2. OPEN TERMINAL/CMD IN PROJECT FOLDER
+   cd soccer-predictor
+
+3. INSTALL DEPENDENCIES
+   npm install
+
+4. CREATE .env FILE
+   Copy .env.example to .env:
+   - On Mac/Linux: cp .env.example .env
+   - On Windows: copy .env.example .env
+
+5. ADD YOUR API KEYS TO .env
+   RAPIDAPI_KEY=your_api_football_key
+   ANTHROPIC_API_KEY=your_anthropic_key
+
+   Get keys from:
+   - API-Football: https://api-sports.io/
+   - Anthropic: https://console.anthropic.com/
+
+6. START THE SERVER
+   npm start
+
+7. OPEN BROWSER
+   http://localhost:3000
+
+✅ DONE! You should see the prediction engine with 4 league tabs.
+
+
+🔑 Getting API Keys
+-------------------
+
+API-FOOTBALL (REQUIRED):
+1. Go to https://api-sports.io/
+2. Sign up for an account
+3. Subscribe to Premium plan (required for all features)
+4. Copy your API key from dashboard
+5. Paste into .env as RAPIDAPI_KEY
+
+ANTHROPIC (REQUIRED):
+1. Go to https://console.anthropic.com/
+2. Sign up for an account
+3. Add credits to your account
+4. Go to API Keys section
+5. Create a new API key
+6. Paste into .env as ANTHROPIC_API_KEY
+
+
+📋 File Structure
+-----------------
+
+soccer-predictor/
+├── server.js              ← Backend (handles all API calls)
+├── public/
+│   └── index.html        ← Frontend (what you see in browser)
+├── package.json          ← Dependencies list
+├── .env                  ← YOUR API KEYS (create this!)
+├── .env.example          ← Template for .env
+└── README.md            ← Full documentation
+
+
+🐛 Common Issues
+----------------
+
+ISSUE: "Port 3000 already in use"
+FIX: Change PORT=3001 in .env file
+
+ISSUE: "Cannot find module 'express'"
+FIX: Run npm install again
+
+ISSUE: "API key invalid"
+FIX: Double-check your keys in .env file (no quotes needed)
+
+ISSUE: "No fixtures showing"
+FIX: 
+- Check your API key is valid
+- Make sure you have API-Football Premium
+- Check console for error messages
+
+
+💻 Commands
+-----------
+
+Install dependencies:       npm install
+Start server:              npm start
+Start with auto-reload:    npm run dev
+Stop server:               Ctrl + C
+
+
+🌐 Accessing the App
+--------------------
+
+Local:     http://localhost:3000
+Network:   http://YOUR_IP:3000 (for testing on phone)
+
+
+📞 Need Help?
+-------------
+
+1. Check README.md for detailed documentation
+2. Check server logs in terminal for errors
+3. Check browser console (F12) for frontend errors
+4. Verify .env file has correct API keys
+
+
+🎯 Next Steps for SAAS
+----------------------
+
+- Add user authentication
+- Set up database for user accounts
+- Implement subscription billing
+- Deploy to cloud (Heroku, AWS, DigitalOcean)
+- Add payment integration (Stripe)
+- Create admin dashboard
+
+
+Happy Predicting! ⚽🎯
