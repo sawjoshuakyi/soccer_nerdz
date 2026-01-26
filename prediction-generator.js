@@ -581,9 +581,17 @@ Home Team: ${fixture.teams.home.name}
   const awayGoals = m.teams.home.id === homeTeamId ? m.goals.away : m.goals.home;
   return homeGoals > awayGoals ? 'W' : homeGoals === awayGoals ? 'D' : 'L';
 }).join(' ') || 'N/A'}
+- Recent Scorelines: ${matchData.homeRecentMatches?.slice(0, 5).map(m => {
+  const isHome = m.teams.home.id === homeTeamId;
+  const teamGoals = isHome ? m.goals.home : m.goals.away;
+  const oppGoals = isHome ? m.goals.away : m.goals.home;
+  return `${teamGoals}-${oppGoals}`;
+}).join(', ') || 'N/A'}
 - Home Record: ${matchData.homeTeamStats?.fixtures?.wins?.home || 0}W-${matchData.homeTeamStats?.fixtures?.draws?.home || 0}D-${matchData.homeTeamStats?.fixtures?.loses?.home || 0}L
-- Goals Scored (Home): ${matchData.homeTeamStats?.goals?.for?.average?.home || 'N/A'} avg
-- Goals Conceded (Home): ${matchData.homeTeamStats?.goals?.against?.average?.home || 'N/A'} avg
+- Goals Scored (Home): ${matchData.homeTeamStats?.goals?.for?.average?.home || 'N/A'} avg (${matchData.homeTeamStats?.goals?.for?.total?.home || 0} total)
+- Goals Conceded (Home): ${matchData.homeTeamStats?.goals?.against?.average?.home || 'N/A'} avg (${matchData.homeTeamStats?.goals?.against?.total?.home || 0} total)
+- Biggest Win (Home): ${matchData.homeTeamStats?.biggest?.wins?.home || 'N/A'}
+- Biggest Loss (Home): ${matchData.homeTeamStats?.biggest?.loses?.home || 'N/A'}
 
 Away Team: ${fixture.teams.away.name}
 - Form: ${matchData.awayRecentMatches?.slice(0, 5).map(m => {
@@ -592,9 +600,17 @@ Away Team: ${fixture.teams.away.name}
   const oppGoals = awayId === awayTeamId ? m.goals.home : m.goals.away;
   return teamGoals > oppGoals ? 'W' : teamGoals === oppGoals ? 'D' : 'L';
 }).join(' ') || 'N/A'}
+- Recent Scorelines: ${matchData.awayRecentMatches?.slice(0, 5).map(m => {
+  const isAway = m.teams.away.id === awayTeamId;
+  const teamGoals = isAway ? m.goals.away : m.goals.home;
+  const oppGoals = isAway ? m.goals.home : m.goals.away;
+  return `${teamGoals}-${oppGoals}`;
+}).join(', ') || 'N/A'}
 - Away Record: ${matchData.awayTeamStats?.fixtures?.wins?.away || 0}W-${matchData.awayTeamStats?.fixtures?.draws?.away || 0}D-${matchData.awayTeamStats?.fixtures?.loses?.away || 0}L
-- Goals Scored (Away): ${matchData.awayTeamStats?.goals?.for?.average?.away || 'N/A'} avg
-- Goals Conceded (Away): ${matchData.awayTeamStats?.goals?.against?.average?.away || 'N/A'} avg
+- Goals Scored (Away): ${matchData.awayTeamStats?.goals?.for?.average?.away || 'N/A'} avg (${matchData.awayTeamStats?.goals?.for?.total?.away || 0} total)
+- Goals Conceded (Away): ${matchData.awayTeamStats?.goals?.against?.average?.away || 'N/A'} avg (${matchData.awayTeamStats?.goals?.against?.total?.away || 0} total)
+- Biggest Win (Away): ${matchData.awayTeamStats?.biggest?.wins?.away || 'N/A'}
+- Biggest Loss (Away): ${matchData.awayTeamStats?.biggest?.loses?.away || 'N/A'}
 
 🤝 HEAD-TO-HEAD (Last 5 meetings):
 ${matchData.headToHead?.slice(0, 5).map(h2h => 
@@ -606,23 +622,58 @@ Home: ${matchData.homeInjuries?.length > 0 ? matchData.homeInjuries.map(inj => `
 Away: ${matchData.awayInjuries?.length > 0 ? matchData.awayInjuries.map(inj => `${inj.player.name} (${inj.player.reason})`).join(', ') : 'None reported'}
 
 ════════════════════════════════════════════════════════════════
+🎯 CRITICAL SCORELINE PREDICTION INSTRUCTIONS
+════════════════════════════════════════════════════════════════
+
+ANALYZE SCORING PATTERNS:
+- Review recent scorelines (NOT just form letters)
+- High-scoring teams (3+ goals avg) → Predict higher scorelines (3-1, 3-2, 4-1)
+- Defensive teams (<1.5 goals avg) → Predict lower scorelines (1-0, 0-0, 1-1)
+- Mismatched teams (table position gap >10) → Predict wider margins (3-0, 4-1)
+- Evenly matched → Predict close games (2-2, 1-1, 2-1)
+
+COMPARE TO LEAGUE AVERAGE:
+- League avg goals/game: ${leagueStatsData?.stats?.goalsPerGame || '2.7'}
+- If BOTH teams score >league avg → High-scoring game likely
+- If BOTH teams concede <league avg → Low-scoring game likely
+
+AVOID GENERIC PREDICTIONS:
+- Do NOT default to 2-1 or 1-2 for every match
+- Base scoreline on ACTUAL team statistics
+- Vary predictions based on match context
+- Be bold when data supports it (don't play it safe)
+
+EXAMPLES OF GOOD VARIANCE:
+- Man City (3.2 goals/game) vs Southampton (0.8 goals/game) → 4-0 or 3-1
+- Two defensive teams (both <1.2 goals/game) → 1-0 or 0-0
+- Two attacking teams (both >2.5 goals/game) → 3-2 or 4-2
+- Evenly matched mid-table → 2-1, 1-1, or 2-2
+
+════════════════════════════════════════════════════════════════
 REQUIRED ANALYSIS FRAMEWORK
 ════════════════════════════════════════════════════════════════
 
 Based on this data, provide a professional 12-section analysis:
 
-1. EXECUTIVE SUMMARY - Match outcome prediction, scoreline, confidence %
+1. EXECUTIVE SUMMARY - Match outcome prediction, SPECIFIC scoreline (not generic 2-1), confidence %
 2. TACTICAL ANALYSIS - Formations, tactical approach, key battles
 3. KEY PLAYERS - Star performers, critical matchups, impact players
-4. TEAM FORM - Recent results, momentum, psychological factors
+4. TEAM FORM - Recent results, momentum, scoring/conceding patterns
 5. LEAGUE POSITION - Standings context, what's at stake
-6. HEAD-TO-HEAD - Historical patterns, psychological edge
+6. HEAD-TO-HEAD - Historical patterns, typical scorelines
 7. INJURY IMPACT - Key absences, how they affect tactics
 8. STATISTICAL PROBABILITIES - Over/Under, BTTS, Clean sheets (compare to league avg)
 9. GOALS BY TIME - When teams score/concede most
-10. ATTACK VS DEFENSE - Offensive threat vs defensive solidity
+10. ATTACK VS DEFENSE - Offensive threat vs defensive solidity, expected goals
 11. RISK FACTORS - Variables that could change outcome
-12. FINAL VERDICT - Predicted score, betting recommendations, confidence rating
+12. FINAL VERDICT - JUSTIFIED predicted score based on actual scoring patterns (vary from 0-0 to 5-2 based on data), betting recommendations, confidence rating
+
+SCORELINE REQUIREMENT: Your predicted scoreline MUST be justified by the actual scoring data shown above. Do NOT default to 2-1 unless the statistics genuinely support it. Analyze:
+- Recent scorelines of both teams
+- Average goals scored/conceded
+- H2H scoring patterns
+- Tactical approach (attacking vs defensive)
+- Then predict a scoreline that MATCHES this analysis
 
 Be specific with numbers, percentages, and probabilities. Reference league averages for context.`;
 
