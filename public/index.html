@@ -430,7 +430,7 @@
 <body>
     <div class="container">
         <header>
-            <div class="logo">Autistic Nerdz</div>
+            <div class="logo">PREDICT AI</div>
             <div class="tagline">Elite League Prediction Engine</div>
         </header>
 
@@ -609,8 +609,8 @@
                 <div class="prediction-output">
                     <div class="prediction-loading">
                         <div class="loader"></div>
-                        <h3 style="font-family: 'Orbitron', sans-serif; font-size: 24px; margin-bottom: 8px;">Comprehensive Data Collection</h3>
-                        <p class="loading-stage">Fetching team stats, standings, injuries, squads, player data, H2H history...</p>
+                        <h3 style="font-family: 'Orbitron', sans-serif; font-size: 24px; margin-bottom: 8px;">Loading Prediction</h3>
+                        <p class="loading-stage">Checking for pre-generated analysis...</p>
                         <div class="loading-progress"><div class="loading-bar"></div></div>
                     </div>
                 </div>
@@ -618,52 +618,78 @@
             container.scrollIntoView({ behavior: 'smooth' });
 
             try {
-                // Step 1: Fetch match data from backend
-                const matchDataResponse = await fetch(
-                    `${API_BASE_URL}/match-data/${fixture.fixture.id}?homeTeamId=${fixture.teams.home.id}&awayTeamId=${fixture.teams.away.id}&leagueId=${fixture.league.id}`
-                );
-
-                if (!matchDataResponse.ok) {
-                    throw new Error('Failed to fetch match data');
-                }
-
-                const matchData = await matchDataResponse.json();
-
-                // Update loading message
-                container.innerHTML = `
-                    <div class="prediction-output">
-                        <div class="prediction-loading">
-                            <div class="loader"></div>
-                            <h3 style="font-family: 'Orbitron', sans-serif; font-size: 24px; margin-bottom: 8px;">Elite AI Analysis Engine</h3>
-                            <p class="loading-stage">Analyzing formations, injuries, player form, tactical patterns, league context...</p>
-                            <div class="loading-progress"><div class="loading-bar"></div></div>
-                        </div>
-                    </div>
-                `;
-
-                // Step 2: Generate prediction
+                // Request prediction (READ-ONLY - no generation)
                 const predictionResponse = await fetch(`${API_BASE_URL}/predict`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ fixture, matchData })
+                    body: JSON.stringify({ fixture })
                 });
 
                 if (!predictionResponse.ok) {
-                    throw new Error('Failed to generate prediction');
+                    // Check if it's a 404 (prediction not available)
+                    if (predictionResponse.status === 404) {
+                        const errorData = await predictionResponse.json();
+                        container.innerHTML = `
+                            <div class="prediction-output">
+                                <div style="background: linear-gradient(135deg, #1a1f35 0%, #2d3748 100%); 
+                                           border: 2px solid #fbbf24; 
+                                           border-radius: 16px; 
+                                           padding: 40px; 
+                                           text-align: center;">
+                                    <div style="font-size: 64px; margin-bottom: 20px;">⏳</div>
+                                    <h3 style="font-family: 'Orbitron', sans-serif; 
+                                               font-size: 28px; 
+                                               color: #fbbf24; 
+                                               margin-bottom: 16px;">
+                                        Prediction Coming Soon
+                                    </h3>
+                                    <p style="font-size: 18px; 
+                                              color: #a0aec0; 
+                                              margin-bottom: 24px; 
+                                              line-height: 1.6;">
+                                        ${errorData.message || 'Our AI system generates predictions for upcoming matches daily.'}
+                                    </p>
+                                    <div style="background: rgba(251, 191, 36, 0.1); 
+                                               border-radius: 12px; 
+                                               padding: 24px; 
+                                               margin-top: 24px;">
+                                        <p style="font-size: 16px; color: #e2e8f0; margin-bottom: 12px;">
+                                            <strong>${errorData.match}</strong>
+                                        </p>
+                                        <p style="font-size: 14px; color: #a0aec0;">
+                                            ${new Date(errorData.date).toLocaleString()}
+                                        </p>
+                                    </div>
+                                    <p style="font-size: 14px; 
+                                              color: #718096; 
+                                              margin-top: 24px;">
+                                        💡 Predictions are generated daily at 3 AM. Check back soon!
+                                    </p>
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    throw new Error('Failed to fetch prediction');
                 }
 
                 const predictionData = await predictionResponse.json();
-                displayPrediction(fixture, predictionData.prediction);
+                
+                if (predictionData.generated) {
+                    displayPrediction(fixture, predictionData.prediction);
+                } else {
+                    throw new Error('Unexpected response format');
+                }
 
             } catch (error) {
-                console.error('Error predicting match:', error);
+                console.error('Error fetching prediction:', error);
                 container.innerHTML = `
                     <div class="prediction-output">
                         <div class="error-message">
-                            <strong>Prediction Error:</strong> ${error.message}<br>
-                            Make sure the backend server is running and properly configured
+                            <strong>Error:</strong> ${error.message}<br>
+                            Please try again or contact support if the issue persists.
                         </div>
                     </div>
                 `;

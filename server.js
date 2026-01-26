@@ -2,10 +2,20 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const cache = require('./cache-simple');
+const cron = require('node-cron');
+const { generateAllPredictions } = require('./generate-predictions');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Track generation status
+let generationStatus = {
+  isRunning: false,
+  lastRun: null,
+  lastStats: null,
+  nextRun: null
+};
 
 // Middleware
 app.use(cors());
@@ -396,345 +406,46 @@ app.get('/api/match-data/:fixtureId', async (req, res) => {
   }
 });
 
-// ENDPOINT: Generate AI prediction
+// ENDPOINT: Get prediction (READ-ONLY - No generation)
 app.post('/api/predict', async (req, res) => {
-  const { fixture, matchData } = req.body;
+  const { fixture } = req.body;
 
-  if (!fixture || !matchData) {
-    return res.status(400).json({ error: 'Missing fixture or match data' });
+  if (!fixture) {
+    return res.status(400).json({ error: 'Missing fixture data' });
   }
 
   const fixtureId = fixture.fixture.id;
 
-  // Check database cache
-  const cachedPrediction = cache.getPrediction(fixtureId);
-  if (cachedPrediction) {
-    console.log(`💾 Returning cached prediction for fixture ${fixtureId}`);
-    cache.logAPICall(`prediction/${fixtureId}`, true, true);
-    return res.json({ prediction: cachedPrediction });
-  }
-
   try {
-    console.log(`Generating AI prediction for ${fixture.teams.home.name} vs ${fixture.teams.away.name}...`);
-
-    // Get league key from fixture
-    const leagueKey = Object.keys(LEAGUES).find(key => LEAGUES[key].id === fixture.league.id);
+    // Check cache for pre-generated prediction
+    const cachedPrediction = cache.getPrediction(fixtureId);
     
-    // Fetch league statistics
-    let leagueStatsData = null;
-    if (leagueKey) {
-      const cachedLeagueStats = cache.getLeagueStats(leagueKey);
-      if (cachedLeagueStats) {
-        leagueStatsData = cachedLeagueStats;
-      } else {
-        try {
-          // Fetch and calculate league stats
-          const leagueConfig = LEAGUES[leagueKey];
-          const data = await fetchFromAPI(`fixtures?league=${leagueConfig.id}&season=${leagueConfig.season}&last=100`);
-          if (data.response && data.response.length > 0) {
-            const stats = calculateLeagueStats(data.response);
-            if (stats) {
-              leagueStatsData = {
-                league: leagueConfig.name,
-                season: leagueConfig.season,
-                stats,
-                lastUpdated: new Date().toISOString()
-              };
-              cache.setLeagueStats(leagueKey, leagueStatsData);
-            }
-          }
-        } catch (err) {
-          console.log('Could not fetch league stats, continuing without them');
-        }
-      }
+    if (cachedPrediction) {
+      console.log(`✅ Returning pre-generated prediction for fixture ${fixtureId}`);
+      cache.logAPICall(`prediction/${fixtureId}`, true, true);
+      return res.json({ 
+        prediction: cachedPrediction,
+        generated: true,
+        cached: true
+      });
     }
 
-    // Extract key players for quick reference
-    const homeTopScorers = matchData.homePlayers?.slice(0, 10).map(p => {
-      const stats = p.statistics?.[0] || {};
-      return {
-        name: p.player.name,
-        position: stats.games?.position || 'Unknown',
-        goals: stats.goals?.total || 0,
-        assists: stats.goals?.assists || 0,
-        rating: stats.games?.rating || 'N/A'
-      };
-    }).filter(p => p.goals > 0 || p.assists > 0 || p.rating !== 'N/A').slice(0, 5) || [];
-
-    const awayTopScorers = matchData.awayPlayers?.slice(0, 10).map(p => {
-      const stats = p.statistics?.[0] || {};
-      return {
-        name: p.player.name,
-        position: stats.games?.position || 'Unknown',
-        goals: stats.goals?.total || 0,
-        assists: stats.goals?.assists || 0,
-        rating: stats.games?.rating || 'N/A'
-      };
-    }).filter(p => p.goals > 0 || p.assists > 0 || p.rating !== 'N/A').slice(0, 5) || [];
-
-    const predictionPrompt = `You are an elite professional soccer prediction analyst for a top-tier sports analytics firm. Generate a comprehensive match prediction with professional-grade depth and accuracy using ALL available data.
-
-UPCOMING MATCH:
-${fixture.teams.home.name} vs ${fixture.teams.away.name}
-Date: ${new Date(fixture.fixture.date).toLocaleString()}
-Competition: ${fixture.league.name}
-Venue: ${fixture.fixture.venue.name}
-
-════════════════════════════════════════════════════════════════
-📊 LEAGUE CONTEXT & STATISTICS
-════════════════════════════════════════════════════════════════
-${leagueStatsData ? `
-${leagueStatsData.league} - Season ${leagueStatsData.season} Statistics (Last 100 Matches):
-
-🎯 OVERALL LEAGUE TRENDS:
-   • Average Goals Per Game: ${leagueStatsData.stats.goalsPerGame}
-   • Both Teams To Score (BTTS): ${leagueStatsData.stats.bttsPercentage}%
-   • Over 2.5 Goals: ${leagueStatsData.stats.over25Percentage}%
-   • Clean Sheets: ${leagueStatsData.stats.cleanSheetPercentage}%
-   • Failed To Score: ${leagueStatsData.stats.failedToScorePercentage}%
-
-📈 RESULT DISTRIBUTION:
-   • Home Wins: ${leagueStatsData.stats.homeWinPercentage}%
-   • Draws: ${leagueStatsData.stats.drawPercentage}%
-   • Away Wins: ${leagueStatsData.stats.awayWinPercentage}%
-
-Use these league averages to contextualize team performance. Teams performing above/below these benchmarks are significant.
-` : 'League statistics not available for this match.'}
-
-════════════════════════════════════════════════════════════════
-⭐ KEY PLAYERS & PERSONNEL TO WATCH
-════════════════════════════════════════════════════════════════
-
-🏠 ${fixture.teams.home.name} - TOP PERFORMERS:
-${homeTopScorers.length > 0 ? homeTopScorers.map(p => 
-  `   • ${p.name} (${p.position}) - ${p.goals} goals, ${p.assists} assists, Rating: ${p.rating}`
-).join('\n') : '   • Data being analyzed from full squad statistics below'}
-
-✈️ ${fixture.teams.away.name} - TOP PERFORMERS:
-${awayTopScorers.length > 0 ? awayTopScorers.map(p => 
-  `   • ${p.name} (${p.position}) - ${p.goals} goals, ${p.assists} assists, Rating: ${p.rating}`
-).join('\n') : '   • Data being analyzed from full squad statistics below'}
-
-COACHING & TACTICAL NOTES:
-Analyze the coaching staff's tactical approach based on:
-- Formation patterns (from team statistics)
-- Recent tactical adjustments (from recent matches)
-- Head-to-head tactical battles
-- In-game management and substitution patterns
-
-════════════════════════════════════════════════════════════════
-COMPREHENSIVE DATA FOR ANALYSIS
-════════════════════════════════════════════════════════════════
-
-📊 TEAM SEASON STATISTICS & PERFORMANCE
-─────────────────────────────────────────────────────────────────
-
-HOME TEAM (${fixture.teams.home.name}) - FULL SEASON STATS:
-${JSON.stringify(matchData.homeTeamStats, null, 2)}
-
-AWAY TEAM (${fixture.teams.away.name}) - FULL SEASON STATS:
-${JSON.stringify(matchData.awayTeamStats, null, 2)}
-
-📈 LEAGUE STANDINGS & CONTEXT
-─────────────────────────────────────────────────────────────────
-${JSON.stringify(matchData.standings, null, 2)}
-
-🔥 RECENT FORM & MOMENTUM (Last 20 Matches)
-─────────────────────────────────────────────────────────────────
-
-HOME TEAM RECENT MATCHES:
-${JSON.stringify(matchData.homeRecentMatches, null, 2)}
-
-AWAY TEAM RECENT MATCHES:
-${JSON.stringify(matchData.awayRecentMatches, null, 2)}
-
-🤝 HEAD-TO-HEAD HISTORY (Last 10 Meetings)
-─────────────────────────────────────────────────────────────────
-${JSON.stringify(matchData.headToHead, null, 2)}
-
-👥 SQUAD INFORMATION & PLAYER DEPTH
-─────────────────────────────────────────────────────────────────
-
-HOME SQUAD:
-${JSON.stringify(matchData.homeSquad, null, 2)}
-
-AWAY SQUAD:
-${JSON.stringify(matchData.awaySquad, null, 2)}
-
-🏥 INJURIES & SUSPENSIONS (Critical Absences)
-─────────────────────────────────────────────────────────────────
-
-HOME TEAM INJURIES:
-${JSON.stringify(matchData.homeInjuries, null, 2)}
-
-AWAY TEAM INJURIES:
-${JSON.stringify(matchData.awayInjuries, null, 2)}
-
-⚽ PLAYER STATISTICS & KEY PERFORMERS
-─────────────────────────────────────────────────────────────────
-
-HOME TEAM PLAYERS (Season Stats):
-${JSON.stringify(matchData.homePlayers, null, 2)}
-
-AWAY TEAM PLAYERS (Season Stats):
-${JSON.stringify(matchData.awayPlayers, null, 2)}
-
-🏆 LEAGUE TOP PERFORMERS (Context)
-─────────────────────────────────────────────────────────────────
-
-TOP SCORERS:
-${JSON.stringify(matchData.leagueTopScorers, null, 2)}
-
-TOP ASSISTS:
-${JSON.stringify(matchData.leagueTopAssists, null, 2)}
-
-🤖 API PREDICTION ALGORITHMS
-─────────────────────────────────────────────────────────────────
-${JSON.stringify(matchData.predictions, null, 2)}
-
-════════════════════════════════════════════════════════════════
-REQUIRED ANALYSIS FRAMEWORK
-════════════════════════════════════════════════════════════════
-
-Based on this comprehensive data, provide a professional match prediction covering ALL sections:
-
-1. **EXECUTIVE SUMMARY**
-   - Match outcome prediction with confidence level (%)
-   - Predicted scoreline with probability ranges
-   - Most likely result (Home Win/Draw/Away Win) with exact percentages
-   - Key deciding factors summary
-
-2. **TACTICAL ANALYSIS & COACHING IMPACT**
-   - Most used formations and tactical setups
-   - Expected tactical approach for this match
-   - Key tactical battles and matchups
-   - Coaching staff influence and tactical adjustments
-   - Set piece threat analysis
-   - Predicted in-game strategies
-
-3. **KEY PLAYERS & INDIVIDUAL BATTLES**
-   - Top performers to watch from both teams
-   - Critical player matchups (striker vs defender, midfielder duels)
-   - Form analysis of star players (recent goals/assists/ratings)
-   - Impact of injuries on key players
-   - Bench strength and potential game-changers
-   - Players likely to be decisive in the outcome
-
-4. **TEAM FORM & MOMENTUM**
-   - Recent form assessment (W/D/L patterns from last 20 matches)
-   - Home vs away performance splits
-   - Goals scored/conceded trends
-   - Winning/losing streaks analysis
-   - Psychological momentum factors
-   - Performance under pressure
-
-5. **LEAGUE POSITION & CONTEXT**
-   - Current standings analysis
-   - Performance vs league averages (goals, BTTS, clean sheets)
-   - Points gap and implications
-   - What's at stake (relegation/Europe/title race)
-   - Pressure and motivation factors
-
-6. **HEAD-TO-HEAD INSIGHTS**
-   - Historical record and dominance patterns
-   - Recent H2H trends
-   - Home advantage impact in this fixture
-   - Scoring patterns in past meetings
-   - Psychological edge analysis
-
-7. **INJURY & SUSPENSION IMPACT**
-   - Critical absences and their impact
-   - How missing players affect tactics and personnel
-   - Depth analysis for replacements
-   - Percentage impact on team strength
-   - Historical performance without key players
-
-8. **STATISTICAL PROBABILITIES**
-   - Over/Under 2.5 goals (with % and comparison to league average of ${leagueStatsData?.stats.over25Percentage || 'N/A'}%)
-   - Both Teams to Score probability (league average: ${leagueStatsData?.stats.bttsPercentage || 'N/A'}%)
-   - Clean sheet likelihood for each team
-   - Expected corners range
-   - Expected cards (yellows/reds)
-   - First goal probability
-   - Half-time/Full-time predictions
-
-9. **GOALS BY TIME PERIOD ANALYSIS**
-   - When each team typically scores (0-15, 16-30, 31-45, 46-60, 61-75, 76-90+ min)
-   - When each team is most vulnerable
-   - Late goal tendencies
-   - Fast start vs slow start patterns
-
-10. **ATTACKING THREAT vs DEFENSIVE SOLIDITY**
-    - Home attack vs Away defense rating
-    - Away attack vs Home defense rating
-    - Offensive efficiency metrics
-    - Defensive vulnerability analysis
-    - Expected possession split
-    - Shot quality comparison
-
-11. **RISK ASSESSMENT & VARIABLES**
-    - Confidence level in prediction (%)
-    - Key variables that could change outcome
-    - Weather/venue factors if relevant
-    - Referee tendencies if significant
-    - Upset potential and probability
-    - Variance factors
-
-12. **FINAL VERDICT & RECOMMENDATIONS**
-    - Primary prediction with exact scoreline
-    - Alternative scenarios (if X happens)
-    - Betting value assessment
-    - Recommended markets (1X2, BTTS, O/U, etc.)
-    - Risk rating (Low/Medium/High)
-    - Confidence summary
-
-════════════════════════════════════════════════════════════════
-
-CRITICAL REQUIREMENTS:
-- Use HARD DATA from all provided sources to support every claim
-- COMPARE team stats to league averages - highlight over/underperformance
-- Be SPECIFIC with percentages, probabilities, and numbers
-- Identify KEY PLAYERS who will likely impact the match outcome
-- Analyze COACHING and tactical approaches in detail
-- Consider INJURIES/SUSPENSIONS impact thoroughly
-- Factor in LEAGUE POSITION pressure and motivation
-- Reference GOALS BY TIME PERIOD patterns
-- Use league statistics to contextualize performance
-- Format professionally for a client report
-- Be decisive but acknowledge uncertainty where it exists
-
-Provide a comprehensive, data-driven analysis worthy of a premium sports analytics firm with special emphasis on key players, coaching tactics, and league context.`;
-
-    // Call Claude API
-    const response = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 8000,
-      messages: [
-        { role: 'user', content: predictionPrompt }
-      ]
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY || '',
-        'anthropic-version': '2023-06-01'
-      }
+    // Prediction not yet generated
+    console.log(`⚠️  No prediction available for fixture ${fixtureId}`);
+    cache.logAPICall(`prediction/${fixtureId}`, false, false);
+    
+    return res.status(404).json({ 
+      error: 'Prediction not available yet',
+      message: 'This prediction will be available soon. Our system generates predictions for upcoming matches daily.',
+      generated: false,
+      fixtureId: fixtureId,
+      match: `${fixture.teams.home.name} vs ${fixture.teams.away.name}`,
+      date: fixture.fixture.date
     });
 
-    const predictionText = response.data.content
-      .filter(item => item.type === 'text')
-      .map(item => item.text)
-      .join('\n');
-
-    // Store in database cache
-    cache.setPrediction(fixtureId, predictionText);
-    cache.logAPICall(`prediction/${fixtureId}`, true, false);
-
-    console.log('AI prediction generated successfully');
-    res.json({ prediction: predictionText });
   } catch (error) {
-    console.error('Error generating prediction:', error.response?.data || error.message);
-    cache.logAPICall(`prediction/${fixtureId}`, false, false);
-    res.status(500).json({ error: 'Failed to generate prediction', details: error.message });
+    console.error('Error fetching prediction:', error.message);
+    res.status(500).json({ error: 'Failed to fetch prediction' });
   }
 });
 
@@ -758,23 +469,179 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     leagues: Object.keys(LEAGUES),
     cache: stats.cache,
-    apiCalls24h: stats.apiCalls24h
+    apiCalls24h: stats.apiCalls24h,
+    generation: generationStatus
   });
 });
 
+// ═══════════════════════════════════════════════════════════════
+// ADMIN ENDPOINTS (Add authentication in production!)
+// ═══════════════════════════════════════════════════════════════
+
+// Manually trigger prediction generation
+app.post('/admin/generate-predictions', async (req, res) => {
+  if (generationStatus.isRunning) {
+    return res.status(429).json({ 
+      error: 'Generation already in progress',
+      status: generationStatus
+    });
+  }
+
+  // Start generation in background
+  res.json({ 
+    message: 'Prediction generation started',
+    status: 'running',
+    checkStatusAt: '/admin/generation-status'
+  });
+
+  // Run generation asynchronously
+  generationStatus.isRunning = true;
+  generationStatus.lastRun = new Date().toISOString();
+
+  try {
+    const stats = await generateAllPredictions();
+    generationStatus.lastStats = stats;
+    generationStatus.isRunning = false;
+  } catch (error) {
+    console.error('Generation error:', error);
+    generationStatus.isRunning = false;
+    generationStatus.lastStats = { error: error.message };
+  }
+});
+
+// Get generation status
+app.get('/admin/generation-status', (req, res) => {
+  res.json(generationStatus);
+});
+
+// Get list of available predictions
+app.get('/admin/predictions', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const cacheDir = path.join(__dirname, 'cache');
+  
+  try {
+    const files = fs.readdirSync(cacheDir);
+    const predictions = files
+      .filter(f => f.startsWith('prediction_'))
+      .map(f => {
+        const fixtureId = f.replace('prediction_', '').replace('.json', '');
+        const filepath = path.join(cacheDir, f);
+        const stats = fs.statSync(filepath);
+        const data = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+        
+        return {
+          fixtureId,
+          createdAt: new Date(data.createdAt).toISOString(),
+          expiresAt: new Date(data.expiresAt).toISOString(),
+          size: stats.size,
+          isExpired: Date.now() > data.expiresAt
+        };
+      });
+    
+    res.json({
+      total: predictions.length,
+      predictions: predictions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// CRON JOB SCHEDULER
+// ═══════════════════════════════════════════════════════════════
+
+// Schedule daily prediction generation at 3:00 AM
+// Cron format: minute hour day month dayOfWeek
+const CRON_SCHEDULE = '0 3 * * *'; // Every day at 3:00 AM
+
+cron.schedule(CRON_SCHEDULE, async () => {
+  console.log('\n⏰ SCHEDULED PREDICTION GENERATION TRIGGERED');
+  console.log(`Time: ${new Date().toLocaleString()}\n`);
+
+  if (generationStatus.isRunning) {
+    console.log('⚠️  Generation already in progress, skipping...\n');
+    return;
+  }
+
+  generationStatus.isRunning = true;
+  generationStatus.lastRun = new Date().toISOString();
+
+  try {
+    const stats = await generateAllPredictions();
+    generationStatus.lastStats = stats;
+    generationStatus.isRunning = false;
+    
+    console.log('\n✅ Scheduled generation completed successfully\n');
+  } catch (error) {
+    console.error('\n❌ Scheduled generation failed:', error.message, '\n');
+    generationStatus.isRunning = false;
+    generationStatus.lastStats = { error: error.message };
+  }
+}, {
+  timezone: "America/New_York" // Adjust to your timezone
+});
+
+// Calculate next run time
+function getNextCronRun() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(3, 0, 0, 0);
+  
+  // If it's past 3 AM today, next run is tomorrow
+  if (now.getHours() >= 3) {
+    return tomorrow.toISOString();
+  } else {
+    // Next run is today at 3 AM
+    const today = new Date(now);
+    today.setHours(3, 0, 0, 0);
+    return today.toISOString();
+  }
+}
+
+generationStatus.nextRun = getNextCronRun();
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`\n🚀 Soccer Prediction Engine Backend running on http://localhost:${PORT}`);
-  console.log(`📊 Available leagues: ${Object.keys(LEAGUES).join(', ')}`);
-  console.log(`💾 File-based caching enabled (JSON)`);
-  console.log(`\n📈 Cache expiration times:`);
-  console.log(`   - Fixtures: 1 hour`);
-  console.log(`   - Match data: 6 hours`);
-  console.log(`   - Predictions: 7 days`);
-  console.log(`\n💡 Make sure to configure your .env file with RAPIDAPI_KEY\n`);
+  console.log('\n════════════════════════════════════════════════════════════════');
+  console.log('🚀 SOCCER PREDICTION ENGINE - SAAS EDITION');
+  console.log('════════════════════════════════════════════════════════════════\n');
+  console.log(`🌐 Server running: http://localhost:${PORT}`);
+  console.log(`📊 Leagues: ${Object.keys(LEAGUES).join(', ')}`);
+  console.log(`💾 Caching: File-based (JSON)\n`);
   
-  // Show current cache stats
+  console.log('📈 Cache Expiration:');
+  console.log('   - Fixtures: 1 hour');
+  console.log('   - Match data: 6 hours');
+  console.log('   - Predictions: 7 days');
+  console.log('   - League stats: 12 hours\n');
+  
+  console.log('⏰ Scheduled Generation:');
+  console.log(`   - Schedule: Every day at 3:00 AM`);
+  console.log(`   - Next run: ${generationStatus.nextRun}`);
+  console.log(`   - Status: ${generationStatus.isRunning ? 'Running' : 'Idle'}\n`);
+  
   const stats = cache.getStats();
-  console.log(`📦 Current cache: ${stats.cache.fixtures} fixtures, ${stats.cache.matchData} match data, ${stats.cache.predictions} predictions`);
-  console.log(`📊 API calls (24h): ${stats.apiCalls24h.total} total, ${stats.apiCalls24h.cached} from cache (${stats.apiCalls24h.cacheHitRate})\n`);
+  console.log('📦 Current Cache:');
+  console.log(`   - Fixtures: ${stats.cache.fixtures}`);
+  console.log(`   - Match data: ${stats.cache.matchData}`);
+  console.log(`   - Predictions: ${stats.cache.predictions} ⭐`);
+  console.log(`   - League stats: ${stats.cache.leagueStats}\n`);
+  
+  console.log('📊 API Calls (24h):');
+  console.log(`   - Total: ${stats.apiCalls24h.total}`);
+  console.log(`   - Cached: ${stats.apiCalls24h.cached}`);
+  console.log(`   - Hit rate: ${stats.apiCalls24h.cacheHitRate}\n`);
+  
+  console.log('🔧 Admin Endpoints:');
+  console.log('   - POST /admin/generate-predictions (trigger generation)');
+  console.log('   - GET  /admin/generation-status (check status)');
+  console.log('   - GET  /admin/predictions (list all predictions)\n');
+  
+  console.log('💡 To manually generate predictions:');
+  console.log('   npm run generate\n');
+  
+  console.log('════════════════════════════════════════════════════════════════\n');
 });
