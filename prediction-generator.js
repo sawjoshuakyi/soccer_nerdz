@@ -459,6 +459,25 @@ async function fetchMatchData(fixture) {
       fetchFromAPI(`players?team=${awayTeamId}&season=${currentSeason}`)
     ]);
 
+    // Extract recent lineups to get CURRENT squad (most reliable during transfer windows)
+    const getRecentLineup = (matches, teamId) => {
+      if (!matches || matches.length === 0) return null;
+      const recentMatch = matches.find(m => m.lineups && m.lineups.length > 0);
+      if (!recentMatch) return null;
+      const isHome = recentMatch.teams.home.id === teamId;
+      const lineup = isHome ? recentMatch.lineups[0] : recentMatch.lineups[1];
+      return {
+        formation: lineup?.formation || 'N/A',
+        startXI: lineup?.startXI || [],
+        substitutes: lineup?.substitutes || [],
+        matchDate: recentMatch.fixture.date,
+        opponent: isHome ? recentMatch.teams.away.name : recentMatch.teams.home.name
+      };
+    };
+
+    const homeRecentLineup = getRecentLineup(homeMatchesData.response || [], homeTeamId);
+    const awayRecentLineup = getRecentLineup(awayMatchesData.response || [], awayTeamId);
+
     return {
       homeTeamStats: homeStatsData.response || null,
       awayTeamStats: awayStatsData.response || null,
