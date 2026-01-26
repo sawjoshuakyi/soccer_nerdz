@@ -186,6 +186,24 @@ async function fetchMatchData(fixture) {
     const homeRecentLineup = getRecentLineup(homeMatchesData.response || [], homeTeamId);
     const awayRecentLineup = getRecentLineup(awayMatchesData.response || [], awayTeamId);
 
+    // Extract PREDICTED lineups for upcoming match (MOST IMPORTANT!)
+    const extractPredictedLineup = (predictionsData) => {
+      if (!predictionsData || !predictionsData[0]) return null;
+      const prediction = predictionsData[0];
+      return {
+        homeFormation: prediction.predictions?.lineup?.home || "N/A",
+        awayFormation: prediction.predictions?.lineup?.away || "N/A",
+        advice: prediction.predictions?.advice || "N/A",
+        winPercentage: {
+          home: prediction.predictions?.percent?.home || "N/A",
+          draw: prediction.predictions?.percent?.draw || "N/A",
+          away: prediction.predictions?.percent?.away || "N/A"
+        }
+      };
+    };
+
+    const predictedLineups = extractPredictedLineup(predictionsData.response || []);
+
     return {
       homeTeamStats: homeStatsData.response || null,
       awayTeamStats: awayStatsData.response || null,
@@ -203,7 +221,8 @@ async function fetchMatchData(fixture) {
       leagueTopScorers: topScorersData.response || [],
       leagueTopAssists: topAssistsData.response || [],
       homeRecentLineup: homeRecentLineup,
-      awayRecentLineup: awayRecentLineup
+      awayRecentLineup: awayRecentLineup,
+      predictedLineups: predictedLineups
     };
   } catch (error) {
     console.error(`   ❌ Error fetching match data:`, error.message);
@@ -478,6 +497,24 @@ async function fetchMatchData(fixture) {
     const homeRecentLineup = getRecentLineup(homeMatchesData.response || [], homeTeamId);
     const awayRecentLineup = getRecentLineup(awayMatchesData.response || [], awayTeamId);
 
+    // Extract PREDICTED lineups for upcoming match (MOST IMPORTANT!)
+    const extractPredictedLineup = (predictionsData) => {
+      if (!predictionsData || !predictionsData[0]) return null;
+      const prediction = predictionsData[0];
+      return {
+        homeFormation: prediction.predictions?.lineup?.home || 'N/A',
+        awayFormation: prediction.predictions?.lineup?.away || 'N/A',
+        advice: prediction.predictions?.advice || 'N/A',
+        winPercentage: {
+          home: prediction.predictions?.percent?.home || 'N/A',
+          draw: prediction.predictions?.percent?.draw || 'N/A',
+          away: prediction.predictions?.percent?.away || 'N/A'
+        }
+      };
+    };
+
+    const predictedLineups = extractPredictedLineup(predictionsData.response || []);
+
     return {
       homeTeamStats: homeStatsData.response || null,
       awayTeamStats: awayStatsData.response || null,
@@ -495,7 +532,8 @@ async function fetchMatchData(fixture) {
       leagueTopScorers: topScorersData.response || [],
       leagueTopAssists: topAssistsData.response || [],
       homeRecentLineup: homeRecentLineup,
-      awayRecentLineup: awayRecentLineup
+      awayRecentLineup: awayRecentLineup,
+      predictedLineups: predictedLineups
     };
   } catch (error) {
     console.error(`   ❌ Error fetching match data:`, error.message);
@@ -613,35 +651,52 @@ Analyze the coaching staff's tactical approach based on:
 - In-game management and substitution patterns
 
 ════════════════════════════════════════════════════════════════
-🔄 CURRENT SQUAD - RECENT MATCH LINEUPS
+⚽ PREDICTED LINEUPS FOR THIS MATCH (UPCOMING GAME)
 ════════════════════════════════════════════════════════════════
 
-IMPORTANT: Use this data to identify CURRENT playing squad (most reliable during transfer windows)
+🎯 THIS IS THE MOST IMPORTANT SECTION - USE THIS FOR YOUR ANALYSIS!
+
+${matchData.predictedLineups ? `
+PREDICTED FORMATIONS:
+🏠 ${fixture.teams.home.name}: ${matchData.predictedLineups.homeFormation}
+✈️ ${fixture.teams.away.name}: ${matchData.predictedLineups.awayFormation}
+
+API PREDICTION CONFIDENCE:
+- Home Win: ${matchData.predictedLineups.winPercentage.home}%
+- Draw: ${matchData.predictedLineups.winPercentage.draw}%
+- Away Win: ${matchData.predictedLineups.winPercentage.away}%
+
+EXPERT ADVICE: ${matchData.predictedLineups.advice}
+
+⚠️  CRITICAL INSTRUCTIONS FOR YOUR ANALYSIS:
+1. Use these PREDICTED formations in your tactical analysis
+2. These are the expected lineups for the UPCOMING match
+3. Cross-reference with injuries - if key player is injured, formation may adjust
+4. Base your KEY PLAYERS section on who is EXPECTED to play (from this prediction)
+5. Your formation diagram should match these predicted formations
+` : 'Predicted lineup data not available - use recent match data as reference'}
+
+════════════════════════════════════════════════════════════════
+📋 REFERENCE: RECENT MATCH LINEUPS (For Squad Confirmation)
+════════════════════════════════════════════════════════════════
+
+Use this to confirm current squad members (avoid transferred players):
 
 ${matchData.homeRecentLineup ? `
-🏠 ${fixture.teams.home.name} - Last Match Lineup:
-   Formation: ${matchData.homeRecentLineup.formation}
-   Match: vs ${matchData.homeRecentLineup.opponent} (${new Date(matchData.homeRecentLineup.matchDate).toLocaleDateString()})
+🏠 ${fixture.teams.home.name} - Last Match:
+   Formation Used: ${matchData.homeRecentLineup.formation}
+   vs ${matchData.homeRecentLineup.opponent} (${new Date(matchData.homeRecentLineup.matchDate).toLocaleDateString()})
    Starting XI: ${matchData.homeRecentLineup.startXI?.map(p => p.player.name).slice(0, 11).join(', ') || 'Not available'}
-   
-   ⚠️  CRITICAL: Only reference players from this recent lineup - they are confirmed current squad members
 ` : `🏠 ${fixture.teams.home.name} - Recent lineup data not available`}
 
 ${matchData.awayRecentLineup ? `
-✈️ ${fixture.teams.away.name} - Last Match Lineup:
-   Formation: ${matchData.awayRecentLineup.formation}
-   Match: vs ${matchData.awayRecentLineup.opponent} (${new Date(matchData.awayRecentLineup.matchDate).toLocaleDateString()})
+✈️ ${fixture.teams.away.name} - Last Match:
+   Formation Used: ${matchData.awayRecentLineup.formation}
+   vs ${matchData.awayRecentLineup.opponent} (${new Date(matchData.awayRecentLineup.matchDate).toLocaleDateString()})
    Starting XI: ${matchData.awayRecentLineup.startXI?.map(p => p.player.name).slice(0, 11).join(', ') || 'Not available'}
-   
-   ⚠️  CRITICAL: Only reference players from this recent lineup - they are confirmed current squad members
 ` : `✈️ ${fixture.teams.away.name} - Recent lineup data not available`}
 
-NOTE: Season player statistics (above) may include transferred players. ALWAYS cross-reference 
-with recent lineups before mentioning specific players. If a player isn't in the recent lineup, 
-they may have transferred - focus on tactical analysis instead of naming unavailable players.
-
-════════════════════════════════════════════════════════════════
-COMPREHENSIVE DATA FOR ANALYSIS
+NOTE: Use predicted formations above for upcoming match. Use recent lineups only to verify current squad membership.
 ════════════════════════════════════════════════════════════════
 
 📊 TEAM STATISTICS (Current Season):
@@ -793,11 +848,17 @@ REQUIRED ANALYSIS FRAMEWORK
 Based on this data, provide a professional 12-section analysis:
 
 1. EXECUTIVE SUMMARY - Match outcome prediction, SPECIFIC scoreline (not generic 2-1), confidence %
-2. TACTICAL ANALYSIS - Formations (use recent lineup formations), tactical approach, key battles
-3. KEY PLAYERS - ⚠️ CRITICAL INSTRUCTION: 
-   - Available Players: ONLY mention players from recent match lineups (CURRENT SQUAD section above). Do NOT mention players from season stats who aren't in recent lineups - they may have transferred.
-   - Injured/Suspended Stars: If the injuries list shows established key players (even if not in recent lineup), you MUST mention them as critical absences and explain the impact. Example: "Jack Grealish (injured) - Everton's main creative force unavailable, significant blow to midfield creativity."
-   - Focus on both: (a) Who IS available and dangerous, (b) Who is MISSING and their absence impact
+
+2. TACTICAL ANALYSIS - ⚠️ USE PREDICTED FORMATIONS from "PREDICTED LINEUPS FOR THIS MATCH" section above (NOT historical lineups). Analyze how these formations will interact, key tactical battles, attacking/defensive strategies based on the UPCOMING match formations.
+
+3. KEY PLAYERS - ⚠️ CRITICAL INSTRUCTIONS: 
+   - Use PREDICTED formations to identify likely starters for the UPCOMING match
+   - Cross-reference with injuries - if key player injured, note their absence
+   - Available Players: Focus on who is EXPECTED to start based on predicted formation
+   - Injured/Suspended Stars: Prominently feature any missing key players and explain tactical impact
+   - Do NOT mention transferred players (use recent match lineups to verify current squad)
+   - Focus on: (a) Who will start and why they're dangerous, (b) Who's missing and the impact
+
 4. TEAM FORM - Recent results, momentum, scoring/conceding patterns
 5. LEAGUE POSITION & STAKES - CRITICAL: Analyze current standings, position gap, what each team is fighting for (Champions League/Europa/Relegation/Mid-table), how pressure affects approach
 6. HEAD-TO-HEAD - Historical patterns, typical scorelines
