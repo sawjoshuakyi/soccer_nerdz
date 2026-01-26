@@ -167,6 +167,25 @@ async function fetchMatchData(fixture) {
       fetchFromAPI(`players?team=${awayTeamId}&season=${currentSeason}`)
     ]);
 
+    // Extract recent lineups to get CURRENT squad (most reliable during transfer windows)
+    const getRecentLineup = (matches, teamId) => {
+      if (!matches || matches.length === 0) return null;
+      const recentMatch = matches.find(m => m.lineups && m.lineups.length > 0);
+      if (!recentMatch) return null;
+      const isHome = recentMatch.teams.home.id === teamId;
+      const lineup = isHome ? recentMatch.lineups[0] : recentMatch.lineups[1];
+      return {
+        formation: lineup?.formation || "N/A",
+        startXI: lineup?.startXI || [],
+        substitutes: lineup?.substitutes || [],
+        matchDate: recentMatch.fixture.date,
+        opponent: isHome ? recentMatch.teams.away.name : recentMatch.teams.home.name
+      };
+    };
+
+    const homeRecentLineup = getRecentLineup(homeMatchesData.response || [], homeTeamId);
+    const awayRecentLineup = getRecentLineup(awayMatchesData.response || [], awayTeamId);
+
     return {
       homeTeamStats: homeStatsData.response || null,
       awayTeamStats: awayStatsData.response || null,
@@ -182,7 +201,9 @@ async function fetchMatchData(fixture) {
       homePlayers: homePlayersData.response || [],
       awayPlayers: awayPlayersData.response || [],
       leagueTopScorers: topScorersData.response || [],
-      leagueTopAssists: topAssistsData.response || []
+      leagueTopAssists: topAssistsData.response || [],
+      homeRecentLineup: homeRecentLineup,
+      awayRecentLineup: awayRecentLineup
     };
   } catch (error) {
     console.error(`   ❌ Error fetching match data:`, error.message);
@@ -453,7 +474,9 @@ async function fetchMatchData(fixture) {
       homePlayers: homePlayersData.response || [],
       awayPlayers: awayPlayersData.response || [],
       leagueTopScorers: topScorersData.response || [],
-      leagueTopAssists: topAssistsData.response || []
+      leagueTopAssists: topAssistsData.response || [],
+      homeRecentLineup: homeRecentLineup,
+      awayRecentLineup: awayRecentLineup
     };
   } catch (error) {
     console.error(`   ❌ Error fetching match data:`, error.message);
@@ -569,6 +592,34 @@ Analyze the coaching staff's tactical approach based on:
 - Recent tactical adjustments (from recent matches)
 - Head-to-head tactical battles
 - In-game management and substitution patterns
+
+════════════════════════════════════════════════════════════════
+🔄 CURRENT SQUAD - RECENT MATCH LINEUPS
+════════════════════════════════════════════════════════════════
+
+IMPORTANT: Use this data to identify CURRENT playing squad (most reliable during transfer windows)
+
+${matchData.homeRecentLineup ? `
+🏠 ${fixture.teams.home.name} - Last Match Lineup:
+   Formation: ${matchData.homeRecentLineup.formation}
+   Match: vs ${matchData.homeRecentLineup.opponent} (${new Date(matchData.homeRecentLineup.matchDate).toLocaleDateString()})
+   Starting XI: ${matchData.homeRecentLineup.startXI?.map(p => p.player.name).slice(0, 11).join(', ') || 'Not available'}
+   
+   ⚠️  CRITICAL: Only reference players from this recent lineup - they are confirmed current squad members
+` : `🏠 ${fixture.teams.home.name} - Recent lineup data not available`}
+
+${matchData.awayRecentLineup ? `
+✈️ ${fixture.teams.away.name} - Last Match Lineup:
+   Formation: ${matchData.awayRecentLineup.formation}
+   Match: vs ${matchData.awayRecentLineup.opponent} (${new Date(matchData.awayRecentLineup.matchDate).toLocaleDateString()})
+   Starting XI: ${matchData.awayRecentLineup.startXI?.map(p => p.player.name).slice(0, 11).join(', ') || 'Not available'}
+   
+   ⚠️  CRITICAL: Only reference players from this recent lineup - they are confirmed current squad members
+` : `✈️ ${fixture.teams.away.name} - Recent lineup data not available`}
+
+NOTE: Season player statistics (above) may include transferred players. ALWAYS cross-reference 
+with recent lineups before mentioning specific players. If a player isn't in the recent lineup, 
+they may have transferred - focus on tactical analysis instead of naming unavailable players.
 
 ════════════════════════════════════════════════════════════════
 COMPREHENSIVE DATA FOR ANALYSIS
@@ -721,8 +772,8 @@ REQUIRED ANALYSIS FRAMEWORK
 Based on this data, provide a professional 12-section analysis:
 
 1. EXECUTIVE SUMMARY - Match outcome prediction, SPECIFIC scoreline (not generic 2-1), confidence %
-2. TACTICAL ANALYSIS - Formations, tactical approach, key battles
-3. KEY PLAYERS - Star performers, critical matchups, impact players
+2. TACTICAL ANALYSIS - Formations (use recent lineup formations), tactical approach, key battles
+3. KEY PLAYERS - ⚠️ CRITICAL: ONLY mention players from recent match lineups (CURRENT SQUAD section above). Do NOT mention players from season stats who aren't in recent lineups - they may have transferred. Focus on tactical roles rather than specific unavailable players.
 4. TEAM FORM - Recent results, momentum, scoring/conceding patterns
 5. LEAGUE POSITION & STAKES - CRITICAL: Analyze current standings, position gap, what each team is fighting for (Champions League/Europa/Relegation/Mid-table), how pressure affects approach
 6. HEAD-TO-HEAD - Historical patterns, typical scorelines
