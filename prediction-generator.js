@@ -674,7 +674,25 @@ EXPERT ADVICE: ${matchData.predictedLineups.advice}
 3. Cross-reference with injuries - if key player is injured, formation may adjust
 4. Base your KEY PLAYERS section on who is EXPECTED to play (from this prediction)
 5. Your formation diagram should match these predicted formations
-` : 'Predicted lineup data not available - use recent match data as reference'}
+` : `
+⚠️  API PREDICTED LINEUPS NOT YET AVAILABLE FOR THIS MATCH
+
+This can happen when:
+- Match is >5 days away (predictions generated 2-3 days before match)
+- Match is <2 hours away (too close to kickoff)
+- API data not yet updated
+
+FALLBACK - USE RECENT MATCH FORMATIONS:
+🏠 ${fixture.teams.home.name}: ${matchData.homeRecentLineup?.formation || 'Formation data unavailable'}
+✈️ ${fixture.teams.away.name}: ${matchData.awayRecentLineup?.formation || 'Formation data unavailable'}
+
+⚠️  CRITICAL INSTRUCTIONS:
+1. Use these RECENT formations as baseline for your tactical analysis
+2. Note that these are from last match, not specifically predicted for this game
+3. Teams may adjust formation based on opponent, injuries, or tactical preference
+4. Cross-reference with injuries to anticipate likely changes
+5. Mention in your analysis that formations are based on recent matches
+`}
 
 ════════════════════════════════════════════════════════════════
 📋 REFERENCE: RECENT MATCH LINEUPS (For Squad Confirmation)
@@ -743,10 +761,15 @@ ${matchData.headToHead?.slice(0, 5).map(h2h =>
 ).join('\n') || 'No recent H2H data'}
 
 🏥 INJURIES & SUSPENSIONS:
-Home: ${matchData.homeInjuries?.length > 0 ? matchData.homeInjuries.map(inj => `${inj.player.name} (${inj.player.reason})`).join(', ') : 'None reported'}
-Away: ${matchData.awayInjuries?.length > 0 ? matchData.awayInjuries.map(inj => `${inj.player.name} (${inj.player.reason})`).join(', ') : 'None reported'}
+Home: ${matchData.homeInjuries?.length > 0 ? matchData.homeInjuries.map(inj => `${inj.player?.name || 'Unknown'} (${inj.player?.type || 'Injured'})`).join(', ') : 'None reported'}
+Away: ${matchData.awayInjuries?.length > 0 ? matchData.awayInjuries.map(inj => `${inj.player?.name || 'Unknown'} (${inj.player?.type || 'Injured'})`).join(', ') : 'None reported'}
 
-⚠️ CRITICAL: If any injured players are established starters or key players (even if not in recent lineup due to injury), their absence MUST be highlighted in the KEY PLAYERS section as a major factor. A star player being unavailable can completely change tactical approach and match outcome.
+⚠️ CRITICAL INSTRUCTION - READ CAREFULLY:
+1. The injuries listed above are REAL - they come from official data
+2. You MUST mention EVERY injured player in your analysis
+3. If a team has injuries listed, you CANNOT say "clean bill of health" or "no injury concerns"
+4. For each injured player, analyze the impact on the team's tactics and strength
+5. Missing key players should significantly affect your prediction and scoreline
 
 📊 LEAGUE STANDINGS & CONTEXT:
 ${matchData.standings?.[0]?.league?.standings?.[0] ? (() => {
@@ -842,39 +865,121 @@ EXAMPLES OF GOOD VARIANCE:
 - Evenly matched mid-table (both positions 8-12) → 2-1, 1-1, or 2-2
 
 ════════════════════════════════════════════════════════════════
-REQUIRED ANALYSIS FRAMEWORK
+REQUIRED ANALYSIS FRAMEWORK - READ EVERY INSTRUCTION
 ════════════════════════════════════════════════════════════════
+
+⚠️ CRITICAL ACCURACY RULES - THESE ARE MANDATORY:
+1. CHECK THE INJURIES SECTION - If it lists injuries, you MUST analyze them. Never say "no injuries" if injuries are listed.
+2. CHECK THE STANDINGS - Use actual league positions, don't guess. Numbers are provided.
+3. CHECK RECENT FORM - Use actual W/D/L patterns shown, not assumptions.
+4. CHECK HEAD-TO-HEAD - Use actual past scorelines, not typical stereotypes.
+5. VARY YOUR SCORELINES - Not every match is 2-1. Use the data to justify your prediction.
 
 Based on this data, provide a professional 12-section analysis:
 
-1. EXECUTIVE SUMMARY - Match outcome prediction, SPECIFIC scoreline (not generic 2-1), confidence %
+1. EXECUTIVE SUMMARY 
+   - Predicted scoreline (MUST be justified by data, not generic)
+   - Confidence percentage (based on how clear-cut the data is)
+   - One-paragraph summary of why this result is likely
 
-2. TACTICAL ANALYSIS - ⚠️ USE PREDICTED FORMATIONS from "PREDICTED LINEUPS FOR THIS MATCH" section above (NOT historical lineups). Analyze how these formations will interact, key tactical battles, attacking/defensive strategies based on the UPCOMING match formations.
+2. TACTICAL ANALYSIS
+   - Use PREDICTED formations from "PREDICTED LINEUPS" section
+   - How will these specific formations interact?
+   - Key tactical battles (e.g., "3-man midfield vs 2-man pivot")
+   - Expected attacking/defensive approach
 
-3. KEY PLAYERS - ⚠️ CRITICAL INSTRUCTIONS: 
-   - Use PREDICTED formations to identify likely starters for the UPCOMING match
-   - Cross-reference with injuries - if key player injured, note their absence
-   - Available Players: Focus on who is EXPECTED to start based on predicted formation
-   - Injured/Suspended Stars: Prominently feature any missing key players and explain tactical impact
-   - Do NOT mention transferred players (use recent match lineups to verify current squad)
-   - Focus on: (a) Who will start and why they're dangerous, (b) Who's missing and the impact
+3. KEY PLAYERS
+   ⚠️ MANDATORY CHECKS:
+   a) Check the INJURIES section above
+   b) For each injured player listed, analyze their importance and who replaces them
+   c) Mention available players from predicted/recent lineups
+   d) Never mention transferred players
+   
+   FORMAT:
+   HOME TEAM:
+   - Available: [List 2-3 key players and roles]
+   - Injured: [EVERY player from injuries list + impact analysis]
+   
+   AWAY TEAM:
+   - Available: [List 2-3 key players and roles]
+   - Injured: [EVERY player from injuries list + impact analysis]
 
-4. TEAM FORM - Recent results, momentum, scoring/conceding patterns
-5. LEAGUE POSITION & STAKES - CRITICAL: Analyze current standings, position gap, what each team is fighting for (Champions League/Europa/Relegation/Mid-table), how pressure affects approach
-6. HEAD-TO-HEAD - Historical patterns, typical scorelines
-7. INJURY IMPACT - Analyze each injured/suspended player listed above. For star players or regular starters, explain: (a) their typical role/importance, (b) how the team will adjust tactically, (c) who replaces them, (d) overall impact on team strength. Don't just list injuries - analyze the tactical and quality impact.
-8. STATISTICAL PROBABILITIES - Over/Under, BTTS, Clean sheets (compare to league avg)
-9. GOALS BY TIME - When teams score/concede most
-10. ATTACK VS DEFENSE - Offensive threat vs defensive solidity, expected goals
-11. RISK FACTORS - Variables that could change outcome
-12. FINAL VERDICT - JUSTIFIED predicted score based on: (a) actual scoring patterns, (b) standings pressure/motivation, (c) quality gap shown by league position. Vary from 0-0 to 5-2 based on data. Include betting recommendations and confidence rating.
+4. TEAM FORM
+   - Last 5 results with actual scores
+   - Momentum analysis (winning/losing streak)
+   - Scoring patterns (how many goals per game recently)
+   - Defensive solidity (goals conceded recently)
 
-SCORELINE REQUIREMENT: Your predicted scoreline MUST consider BOTH statistical data AND league position context:
-- Recent scorelines of both teams
-- Average goals scored/conceded
-- H2H scoring patterns
-- Tactical approach (attacking vs defensive)
-- **LEAGUE POSITION PRESSURE** (Champions League chase = attacking, relegation battle = defensive, big gap = wider margin)
+5. LEAGUE POSITION & STAKES
+   - Actual positions from standings data
+   - What each team is fighting for (be specific - "need points for Europa spot")
+   - How pressure affects tactics
+   - Motivation factor
+
+6. HEAD-TO-HEAD
+   - Recent meetings with scores
+   - Historical patterns
+   - Home advantage statistics
+
+7. INJURY IMPACT ⚠️ CRITICAL SECTION
+   MANDATORY: Analyze EVERY injury from the list above.
+   For each injured player:
+   - Their usual role in the team
+   - Their importance (starter/backup/key player)
+   - Who will replace them
+   - How tactics might change
+   - Overall team strength impact (-10%, -20%, etc.)
+   
+   If NO injuries listed, state "Both teams at full strength"
+   If injuries ARE listed, you MUST analyze each one
+
+8. STATISTICAL PROBABILITIES
+   - Over/Under 2.5 goals likelihood (based on actual stats)
+   - Both Teams To Score probability
+   - Clean sheet probability
+   - Compare to league averages
+
+9. GOALS BY TIME
+   - When home team scores most often
+   - When away team scores most often
+   - Dangerous periods for each team
+
+10. ATTACK VS DEFENSE
+    - Home attack vs Away defense matchup
+    - Away attack vs Home defense matchup
+    - Expected goals based on stats
+    - Key advantage areas
+
+11. RISK FACTORS
+    - What could change the predicted outcome
+    - Weather, referee, crowd factors
+    - Potential lineup surprises
+    - Form variance
+
+12. FINAL VERDICT
+    MUST INCLUDE:
+    - Justified predicted scoreline
+    - Three bullet points explaining the scoreline:
+      • Statistical justification (goals/game, recent form)
+      • Tactical justification (formation matchup, style)
+      • Contextual justification (league position, injuries, motivation)
+    - Betting recommendation (value bets based on analysis)
+    - Confidence rating (low/medium/high with explanation)
+
+SCORELINE REQUIREMENT:
+Your predicted score MUST be justified by:
+✅ Actual team statistics (goals scored/conceded per game)
+✅ Recent form (last 5 matches)
+✅ League position and pressure
+✅ Injury impact (missing key players reduces expected goals)
+✅ H2H patterns
+
+DO NOT predict 2-1 for every match. Vary based on data:
+- Relegation battle (bottom 3 teams) → 0-0, 1-0, 1-1
+- Big team vs weak team (10+ place gap) → 3-0, 4-1, 3-1
+- Two attacking teams → 3-2, 4-2, 2-2
+- Defensive teams → 1-0, 0-0, 1-1
+- Evenly matched → 2-1, 2-2, 1-1
 - Then predict a scoreline that MATCHES this complete analysis
 
 Be specific with numbers, percentages, and probabilities. Always reference league position and what's at stake.`;

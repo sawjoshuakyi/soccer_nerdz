@@ -12,6 +12,9 @@ window.renderFormationDiagram = function(data) {
     injuries 
   } = data;
 
+  const homeInjuries = injuries?.home || [];
+  const awayInjuries = injuries?.away || [];
+
   const html = `
     <div class="formation-container-livescore">
       <div class="formation-header-livescore">
@@ -26,22 +29,57 @@ window.renderFormationDiagram = function(data) {
         </div>
       </div>
 
-      <div class="pitch-livescore">
-        <!-- Away team (top) -->
-        <div class="team-lineup away-team">
-          <div class="lineup-rows" id="away-lineup"></div>
+      <!-- Lineup and Injuries Grid -->
+      <div class="lineup-injuries-grid">
+        <!-- Away Team (Top Half) -->
+        <div class="team-panel">
+          <div class="panel-title">${awayTeam} Starting XI</div>
+          <div class="pitch-livescore">
+            <div class="team-lineup away-team">
+              <div class="lineup-rows" id="away-lineup"></div>
+            </div>
+            <div class="center-line-indicator">
+              <span>${awayTeam}</span>
+              <div class="center-circle"></div>
+              <span>${homeTeam}</span>
+            </div>
+            <div class="team-lineup home-team">
+              <div class="lineup-rows" id="home-lineup"></div>
+            </div>
+          </div>
         </div>
 
-        <!-- Center line indicator -->
-        <div class="center-line-indicator">
-          <span>${awayTeam}</span>
-          <div class="center-circle"></div>
-          <span>${homeTeam}</span>
-        </div>
+        <!-- Injuries Panel -->
+        <div class="injuries-panel">
+          <div class="panel-title">⚠️ Injuries & Suspensions</div>
+          
+          <div class="injury-section">
+            <div class="injury-team-header">${homeTeam}</div>
+            ${homeInjuries.length > 0 ? `
+              <div class="injury-list">
+                ${homeInjuries.map(inj => `
+                  <div class="injury-item">
+                    <span class="injury-player">${inj.name}</span>
+                    <span class="injury-type">${inj.type || 'Injured'}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : '<div class="no-injuries">✅ No injuries reported</div>'}
+          </div>
 
-        <!-- Home team (bottom) -->
-        <div class="team-lineup home-team">
-          <div class="lineup-rows" id="home-lineup"></div>
+          <div class="injury-section">
+            <div class="injury-team-header">${awayTeam}</div>
+            ${awayInjuries.length > 0 ? `
+              <div class="injury-list">
+                ${awayInjuries.map(inj => `
+                  <div class="injury-item">
+                    <span class="injury-player">${inj.name}</span>
+                    <span class="injury-type">${inj.type || 'Injured'}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : '<div class="no-injuries">✅ No injuries reported</div>'}
+          </div>
         </div>
       </div>
     </div>
@@ -50,8 +88,8 @@ window.renderFormationDiagram = function(data) {
   document.getElementById('formation-display').innerHTML = html;
   
   // Render lineups
-  renderLivescoreLineup('home-lineup', homeFormation, homeLineup, injuries, true);
-  renderLivescoreLineup('away-lineup', awayFormation, awayLineup, injuries, false);
+  renderLivescoreLineup('home-lineup', homeFormation, homeLineup, injuries?.home?.map(i => i.name) || [], true);
+  renderLivescoreLineup('away-lineup', awayFormation, awayLineup, injuries?.away?.map(i => i.name) || [], false);
 };
 
 function renderLivescoreLineup(containerId, formation, lineup, injuries, isHome) {

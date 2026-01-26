@@ -130,11 +130,13 @@ async function generateAllPredictions() {
           injuries: {
             home: matchData.homeInjuries?.map(inj => ({
               name: inj.player?.name || 'Unknown',
-              reason: inj.player?.reason || inj.player?.type || 'Injured'
+              type: inj.player?.type || 'Injured',
+              fixture: inj.fixture?.date || null
             })) || [],
             away: matchData.awayInjuries?.map(inj => ({
               name: inj.player?.name || 'Unknown',
-              reason: inj.player?.reason || inj.player?.type || 'Injured'
+              type: inj.player?.type || 'Injured',
+              fixture: inj.fixture?.date || null
             })) || []
           },
           generatedAt: new Date().toISOString()
