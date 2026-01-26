@@ -691,6 +691,8 @@ ${matchData.headToHead?.slice(0, 5).map(h2h =>
 Home: ${matchData.homeInjuries?.length > 0 ? matchData.homeInjuries.map(inj => `${inj.player.name} (${inj.player.reason})`).join(', ') : 'None reported'}
 Away: ${matchData.awayInjuries?.length > 0 ? matchData.awayInjuries.map(inj => `${inj.player.name} (${inj.player.reason})`).join(', ') : 'None reported'}
 
+⚠️ CRITICAL: If any injured players are established starters or key players (even if not in recent lineup due to injury), their absence MUST be highlighted in the KEY PLAYERS section as a major factor. A star player being unavailable can completely change tactical approach and match outcome.
+
 📊 LEAGUE STANDINGS & CONTEXT:
 ${matchData.standings?.[0]?.league?.standings?.[0] ? (() => {
   const table = matchData.standings[0].league.standings[0];
@@ -792,11 +794,14 @@ Based on this data, provide a professional 12-section analysis:
 
 1. EXECUTIVE SUMMARY - Match outcome prediction, SPECIFIC scoreline (not generic 2-1), confidence %
 2. TACTICAL ANALYSIS - Formations (use recent lineup formations), tactical approach, key battles
-3. KEY PLAYERS - ⚠️ CRITICAL: ONLY mention players from recent match lineups (CURRENT SQUAD section above). Do NOT mention players from season stats who aren't in recent lineups - they may have transferred. Focus on tactical roles rather than specific unavailable players.
+3. KEY PLAYERS - ⚠️ CRITICAL INSTRUCTION: 
+   - Available Players: ONLY mention players from recent match lineups (CURRENT SQUAD section above). Do NOT mention players from season stats who aren't in recent lineups - they may have transferred.
+   - Injured/Suspended Stars: If the injuries list shows established key players (even if not in recent lineup), you MUST mention them as critical absences and explain the impact. Example: "Jack Grealish (injured) - Everton's main creative force unavailable, significant blow to midfield creativity."
+   - Focus on both: (a) Who IS available and dangerous, (b) Who is MISSING and their absence impact
 4. TEAM FORM - Recent results, momentum, scoring/conceding patterns
 5. LEAGUE POSITION & STAKES - CRITICAL: Analyze current standings, position gap, what each team is fighting for (Champions League/Europa/Relegation/Mid-table), how pressure affects approach
 6. HEAD-TO-HEAD - Historical patterns, typical scorelines
-7. INJURY IMPACT - Key absences, how they affect tactics
+7. INJURY IMPACT - Analyze each injured/suspended player listed above. For star players or regular starters, explain: (a) their typical role/importance, (b) how the team will adjust tactically, (c) who replaces them, (d) overall impact on team strength. Don't just list injuries - analyze the tactical and quality impact.
 8. STATISTICAL PROBABILITIES - Over/Under, BTTS, Clean sheets (compare to league avg)
 9. GOALS BY TIME - When teams score/concede most
 10. ATTACK VS DEFENSE - Offensive threat vs defensive solidity, expected goals
