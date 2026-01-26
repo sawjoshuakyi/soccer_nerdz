@@ -621,6 +621,64 @@ ${matchData.headToHead?.slice(0, 5).map(h2h =>
 Home: ${matchData.homeInjuries?.length > 0 ? matchData.homeInjuries.map(inj => `${inj.player.name} (${inj.player.reason})`).join(', ') : 'None reported'}
 Away: ${matchData.awayInjuries?.length > 0 ? matchData.awayInjuries.map(inj => `${inj.player.name} (${inj.player.reason})`).join(', ') : 'None reported'}
 
+📊 LEAGUE STANDINGS & CONTEXT:
+${matchData.standings?.[0]?.league?.standings?.[0] ? (() => {
+  const table = matchData.standings[0].league.standings[0];
+  const homeTeam = table.find(t => t.team.id === homeTeamId);
+  const awayTeam = table.find(t => t.team.id === awayTeamId);
+  
+  let standingsInfo = '';
+  
+  if (homeTeam && awayTeam) {
+    standingsInfo += `
+${fixture.teams.home.name}: Position ${homeTeam.rank}/${table.length}
+   • Points: ${homeTeam.points} | W:${homeTeam.all.win} D:${homeTeam.all.draw} L:${homeTeam.all.lose}
+   • Goal Difference: ${homeTeam.goalsDiff > 0 ? '+' : ''}${homeTeam.goalsDiff}
+   • Form: ${homeTeam.form || 'N/A'}
+   • Last Update: ${homeTeam.update || 'N/A'}
+
+${fixture.teams.away.name}: Position ${awayTeam.rank}/${table.length}
+   • Points: ${awayTeam.points} | W:${awayTeam.all.win} D:${awayTeam.all.draw} L:${awayTeam.all.lose}
+   • Goal Difference: ${awayTeam.goalsDiff > 0 ? '+' : ''}${awayTeam.goalsDiff}
+   • Form: ${awayTeam.form || 'N/A'}
+   • Last Update: ${awayTeam.update || 'N/A'}
+
+Position Gap: ${Math.abs(homeTeam.rank - awayTeam.rank)} places
+Points Gap: ${Math.abs(homeTeam.points - awayTeam.points)} points
+
+WHAT'S AT STAKE:
+`;
+    
+    // Determine what's at stake based on position
+    const analyzeStake = (team, rank) => {
+      if (rank <= 4) return `${team} fighting for Champions League qualification (Top 4)`;
+      if (rank <= 7) return `${team} competing for Europa League spots (5th-7th)`;
+      if (rank >= table.length - 3) return `${team} in RELEGATION BATTLE - every point crucial`;
+      if (rank >= table.length - 5) return `${team} fighting to avoid relegation zone`;
+      return `${team} mid-table - positioning important`;
+    };
+    
+    standingsInfo += `- Home: ${analyzeStake(fixture.teams.home.name, homeTeam.rank)}
+- Away: ${analyzeStake(fixture.teams.away.name, awayTeam.rank)}
+- Pressure Level: ${Math.abs(homeTeam.rank - awayTeam.rank) > 10 ? 'HIGH (big gap in quality)' : 
+                   (homeTeam.rank <= 4 || awayTeam.rank <= 4) ? 'HIGH (European race)' :
+                   (homeTeam.rank >= table.length - 5 || awayTeam.rank >= table.length - 5) ? 'VERY HIGH (relegation threat)' :
+                   'MODERATE (mid-table clash)'}
+`;
+  } else {
+    standingsInfo = 'Full standings data not available - teams in competitive league positions';
+  }
+  
+  return standingsInfo;
+})() : 'League standings data not available for this match.'}
+
+🎯 CONTEXT-SPECIFIC ANALYSIS REQUIREMENTS:
+- Relegation battles → Teams more defensive, cautious, fighting for survival
+- Champions League race → High pressure, need to win, more attacking intent
+- Big position gap → Favorite should dominate, expect wider margin
+- Close positions → Evenly matched, tighter game expected
+- Mid-table security → Less pressure, more open game possible
+
 ════════════════════════════════════════════════════════════════
 🎯 CRITICAL SCORELINE PREDICTION INSTRUCTIONS
 ════════════════════════════════════════════════════════════════
@@ -632,6 +690,13 @@ ANALYZE SCORING PATTERNS:
 - Mismatched teams (table position gap >10) → Predict wider margins (3-0, 4-1)
 - Evenly matched → Predict close games (2-2, 1-1, 2-1)
 
+USE STANDINGS CONTEXT:
+- Champions League chasers (Top 4 battle) → More attacking, need wins
+- Europa League race (5th-7th) → Competitive, balanced approach
+- Relegation battle (Bottom 3-5) → VERY defensive, cagey games
+- Mid-table safety → More freedom to attack, potentially higher scoring
+- Position gap >10 places → Expect quality gap to show (wider margins)
+
 COMPARE TO LEAGUE AVERAGE:
 - League avg goals/game: ${leagueStatsData?.stats?.goalsPerGame || '2.7'}
 - If BOTH teams score >league avg → High-scoring game likely
@@ -639,15 +704,15 @@ COMPARE TO LEAGUE AVERAGE:
 
 AVOID GENERIC PREDICTIONS:
 - Do NOT default to 2-1 or 1-2 for every match
-- Base scoreline on ACTUAL team statistics
+- Base scoreline on ACTUAL team statistics AND league position pressure
 - Vary predictions based on match context
 - Be bold when data supports it (don't play it safe)
 
 EXAMPLES OF GOOD VARIANCE:
-- Man City (3.2 goals/game) vs Southampton (0.8 goals/game) → 4-0 or 3-1
-- Two defensive teams (both <1.2 goals/game) → 1-0 or 0-0
-- Two attacking teams (both >2.5 goals/game) → 3-2 or 4-2
-- Evenly matched mid-table → 2-1, 1-1, or 2-2
+- Man City (1st, 3.2 goals/game) vs Southampton (20th, 0.8 goals/game) → 4-0 or 3-1
+- Two relegation teams (both <1.2 goals/game, bottom 3) → 1-0 or 0-0 (desperate for points)
+- Two attacking teams in European race (both >2.5 goals/game) → 3-2 or 4-2
+- Evenly matched mid-table (both positions 8-12) → 2-1, 1-1, or 2-2
 
 ════════════════════════════════════════════════════════════════
 REQUIRED ANALYSIS FRAMEWORK
@@ -659,23 +724,24 @@ Based on this data, provide a professional 12-section analysis:
 2. TACTICAL ANALYSIS - Formations, tactical approach, key battles
 3. KEY PLAYERS - Star performers, critical matchups, impact players
 4. TEAM FORM - Recent results, momentum, scoring/conceding patterns
-5. LEAGUE POSITION - Standings context, what's at stake
+5. LEAGUE POSITION & STAKES - CRITICAL: Analyze current standings, position gap, what each team is fighting for (Champions League/Europa/Relegation/Mid-table), how pressure affects approach
 6. HEAD-TO-HEAD - Historical patterns, typical scorelines
 7. INJURY IMPACT - Key absences, how they affect tactics
 8. STATISTICAL PROBABILITIES - Over/Under, BTTS, Clean sheets (compare to league avg)
 9. GOALS BY TIME - When teams score/concede most
 10. ATTACK VS DEFENSE - Offensive threat vs defensive solidity, expected goals
 11. RISK FACTORS - Variables that could change outcome
-12. FINAL VERDICT - JUSTIFIED predicted score based on actual scoring patterns (vary from 0-0 to 5-2 based on data), betting recommendations, confidence rating
+12. FINAL VERDICT - JUSTIFIED predicted score based on: (a) actual scoring patterns, (b) standings pressure/motivation, (c) quality gap shown by league position. Vary from 0-0 to 5-2 based on data. Include betting recommendations and confidence rating.
 
-SCORELINE REQUIREMENT: Your predicted scoreline MUST be justified by the actual scoring data shown above. Do NOT default to 2-1 unless the statistics genuinely support it. Analyze:
+SCORELINE REQUIREMENT: Your predicted scoreline MUST consider BOTH statistical data AND league position context:
 - Recent scorelines of both teams
 - Average goals scored/conceded
 - H2H scoring patterns
 - Tactical approach (attacking vs defensive)
-- Then predict a scoreline that MATCHES this analysis
+- **LEAGUE POSITION PRESSURE** (Champions League chase = attacking, relegation battle = defensive, big gap = wider margin)
+- Then predict a scoreline that MATCHES this complete analysis
 
-Be specific with numbers, percentages, and probabilities. Reference league averages for context.`;
+Be specific with numbers, percentages, and probabilities. Always reference league position and what's at stake.`;
 
   try {
     const response = await axios.post('https://api.anthropic.com/v1/messages', {
