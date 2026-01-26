@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PredictAI - Elite League Prediction Engine</title>
+    <title>REGARDED NERD - Elite League Prediction Engine</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -425,12 +425,237 @@
                 align-items: flex-start;
             }
         }
+
+        /* Formation Diagram Styles - Livescore Style */
+        .formation-container-livescore {
+          max-width: 600px;
+          margin: 30px auto;
+          background: var(--card-bg);
+          border-radius: 16px;
+          border: 1px solid var(--border);
+          overflow: hidden;
+        }
+
+        .formation-header-livescore {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px 30px;
+          background: linear-gradient(135deg, var(--border) 0%, var(--card-bg) 100%);
+          border-bottom: 1px solid var(--border);
+        }
+
+        .team-section {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .team-name-livescore {
+          font-size: 18px;
+          font-weight: 700;
+          color: var(--text-primary);
+        }
+
+        .formation-badge {
+          display: inline-block;
+          padding: 4px 12px;
+          background: var(--primary);
+          color: var(--dark-bg);
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+        }
+
+        .vs-text {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--text-secondary);
+          opacity: 0.5;
+        }
+
+        .pitch-livescore {
+          position: relative;
+          background: linear-gradient(180deg, #1a4d2e 0%, #1a4d2e 48%, #ffffff 48%, #ffffff 52%, #1a4d2e 52%, #1a4d2e 100%);
+          padding: 30px 20px;
+          min-height: 600px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+
+        .pitch-livescore::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 100px;
+          height: 100px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-radius: 50%;
+          pointer-events: none;
+        }
+
+        .pitch-livescore::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 8px;
+          height: 8px;
+          background: rgba(255,255,255,0.5);
+          border-radius: 50%;
+          pointer-events: none;
+        }
+
+        .center-line-indicator {
+          position: absolute;
+          top: 50%;
+          left: 0;
+          right: 0;
+          transform: translateY(-50%);
+          display: flex;
+          justify-content: space-between;
+          padding: 0 20px;
+          font-size: 11px;
+          color: rgba(255,255,255,0.4);
+          font-weight: 600;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .team-lineup {
+          position: relative;
+          z-index: 2;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .away-team {
+          justify-content: flex-start;
+        }
+
+        .home-team {
+          justify-content: flex-end;
+        }
+
+        .lineup-rows {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .player-row-livescore {
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          gap: 15px;
+          padding: 0 10px;
+        }
+
+        .player-livescore {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          flex: 1;
+          max-width: 100px;
+        }
+
+        .player-dot {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: 3px solid;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 14px;
+          color: var(--dark-bg);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          position: relative;
+        }
+
+        .shirt-number {
+          font-family: 'Orbitron', sans-serif;
+          font-weight: 900;
+        }
+
+        .player-info {
+          text-align: center;
+          width: 100%;
+        }
+
+        .player-name-livescore {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--text-primary);
+          line-height: 1.2;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .injury-badge {
+          font-size: 9px;
+          color: var(--danger);
+          margin-top: 2px;
+          font-weight: 600;
+        }
+
+        .injured-livescore .player-dot {
+          opacity: 0.5;
+        }
+
+        .injured-livescore .player-dot::after {
+          content: '⚠️';
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+          .formation-header-livescore {
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+          }
+          
+          .team-section {
+            align-items: center;
+          }
+          
+          .pitch-livescore {
+            padding: 20px 10px;
+            min-height: 500px;
+          }
+          
+          .player-dot {
+            width: 35px;
+            height: 35px;
+            font-size: 12px;
+          }
+          
+          .player-name-livescore {
+            font-size: 10px;
+          }
+          
+          .player-row-livescore {
+            gap: 10px;
+          }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <div class="logo">REGARDED NERDZ ON PC</div>
+            <div class="logo">PREDICT AI</div>
             <div class="tagline">Elite League Prediction Engine</div>
         </header>
 
@@ -701,7 +926,12 @@
             }
         }
 
-        function displayPrediction(fixture, predictionText) {
+        function displayPrediction(fixture, predictionData) {
+            // Handle both old format (just text) and new format (object)
+            const predictionText = typeof predictionData === 'string' ? predictionData : predictionData.prediction;
+            const formations = predictionData.formations || { home: 'N/A', away: 'N/A' };
+            const injuries = predictionData.injuries || { home: [], away: [] };
+            
             let formattedText = predictionText
                 .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
                 .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -726,6 +956,10 @@
                             })}
                         </div>
                     </div>
+                    
+                    <!-- Formation Diagram -->
+                    <div id="formation-display"></div>
+                    
                     <div class="prediction-content">
                         <p>${formattedText}</p>
                     </div>
@@ -733,7 +967,47 @@
             `;
 
             document.getElementById('predictionContainer').innerHTML = html;
+            
+            // Render formation diagram if we have formation data
+            if (formations.home !== 'N/A' && formations.away !== 'N/A' && window.renderFormationDiagram) {
+                const injuredPlayers = [
+                    ...injuries.home.map(i => i.name),
+                    ...injuries.away.map(i => i.name)
+                ];
+                
+                window.renderFormationDiagram({
+                    homeTeam: fixture.teams.home.name,
+                    awayTeam: fixture.teams.away.name,
+                    homeFormation: formations.home,
+                    awayFormation: formations.away,
+                    homeLineup: parseFormationToLineup(formations.home),
+                    awayLineup: parseFormationToLineup(formations.away),
+                    injuries: injuredPlayers
+                });
+            }
+        }
+        
+        // Helper function to convert formation string to lineup structure
+        function parseFormationToLineup(formation) {
+            const [def, mid, att] = formation.split('-').map(Number);
+            if (!def || !mid || !att) {
+                // Default 4-3-3 if invalid
+                return {
+                    attackers: [{name: 'FW'}, {name: 'ST'}, {name: 'FW'}],
+                    midfielders: [{name: 'CM'}, {name: 'CM'}, {name: 'CM'}],
+                    defenders: [{name: 'LB'}, {name: 'CB'}, {name: 'CB'}, {name: 'RB'}],
+                    goalkeeper: {name: 'GK'}
+                };
+            }
+            
+            return {
+                attackers: Array(att).fill(null).map(() => ({name: 'ATT'})),
+                midfielders: Array(mid).fill(null).map(() => ({name: 'MID'})),
+                defenders: Array(def).fill(null).map(() => ({name: 'DEF'})),
+                goalkeeper: {name: 'GK'}
+            };
         }
     </script>
+    <script src="/formation-diagram.js"></script>
 </body>
 </html>

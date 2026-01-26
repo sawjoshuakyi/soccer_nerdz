@@ -111,8 +111,37 @@ async function generateAllPredictions() {
         console.log(`   🤖 Generating AI prediction...`);
         const prediction = await generatePrediction(fixture, matchData, leagueStatsData);
         
+        // Create full prediction object with metadata
+        const predictionData = {
+          prediction: prediction,
+          fixture: {
+            id: fixtureId,
+            homeTeam: fixture.teams.home.name,
+            awayTeam: fixture.teams.away.name,
+            date: fixture.fixture.date,
+            league: fixture.league.name,
+            venue: fixture.fixture.venue?.name || 'TBD'
+          },
+          formations: {
+            home: matchData.predictedLineups?.homeFormation || matchData.homeRecentLineup?.formation || 'N/A',
+            away: matchData.predictedLineups?.awayFormation || matchData.awayRecentLineup?.formation || 'N/A'
+          },
+          winProbability: matchData.predictedLineups?.winPercentage || null,
+          injuries: {
+            home: matchData.homeInjuries?.map(inj => ({
+              name: inj.player?.name || 'Unknown',
+              reason: inj.player?.reason || inj.player?.type || 'Injured'
+            })) || [],
+            away: matchData.awayInjuries?.map(inj => ({
+              name: inj.player?.name || 'Unknown',
+              reason: inj.player?.reason || inj.player?.type || 'Injured'
+            })) || []
+          },
+          generatedAt: new Date().toISOString()
+        };
+        
         // Store prediction in cache (7 days)
-        cache.setPrediction(fixtureId, prediction);
+        cache.setPrediction(fixtureId, predictionData);
         console.log(`   ✅ Prediction generated and cached`);
         console.log(`   📝 Length: ${prediction.length} characters\n`);
 
