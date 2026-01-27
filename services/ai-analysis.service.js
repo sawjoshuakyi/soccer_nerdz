@@ -74,8 +74,20 @@ class AIAnalysisService {
     const awayTeam = fixture.teams.away.name;
     const league = fixture.league.name;
     const matchDate = new Date(fixture.fixture.date).toLocaleString();
+    const currentDate = new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
 
-    return `You are an expert football analyst providing professional match predictions. Analyze this match comprehensively and provide detailed insights.
+    return `You are an expert football analyst providing professional match predictions. 
+
+⚠️ IMPORTANT CONTEXT ⚠️
+Today's Date: ${currentDate}
+Current Season: 2025-2026
+Your knowledge cutoff may be outdated. Use ONLY the data provided below. Do not rely on historical assumptions about team positions or form.
+
+Analyze this match comprehensively and provide detailed insights.
 
 ═══════════════════════════════════════════════════════════════
 MATCH INFORMATION
@@ -125,7 +137,7 @@ REQUIRED SECTIONS:
 - Style matchup analysis
 - Key tactical advantages
 
-**3. KEY PLAYERS & INJURIES** ⚠️ CRITICAL
+**3. PLAYER PERFORMANCE ANALYSIS & SCORING PREDICTIONS** ⚠️ CRITICAL
 ⚠️⚠️⚠️ TRANSFER WINDOW WARNING ⚠️⚠️⚠️
 
 DO NOT use the "Season Top Scorers" section to determine who is available!
@@ -134,26 +146,39 @@ That data may include players who have TRANSFERRED to other clubs!
 Use THIS priority order ONLY:
 1. RECENT FORM → "Players Recently Used (Last 3 Games)" list
 2. INJURIES → Who is confirmed OUT
-3. Generic terms if uncertain (e.g., "their attacking options")
+3. Season stats for CONTEXT ONLY (if player is in recent lineups)
 
-HOME TEAM:
-- Available: ONLY list players from "Players Recently Used" list
-- Injuries/Out: EVERY player from injuries section + impact
-- DO NOT name specific players from "Season Top Scorers" unless they're in recent lineup
+For each team, analyze:
 
-AWAY TEAM:
-- Available: ONLY list players from "Players Recently Used" list  
-- Injuries/Out: EVERY player from injuries section + impact
-- DO NOT name specific players from "Season Top Scorers" unless they're in recent lineup
+HOME TEAM KEY PLAYERS:
+For players in "Players Recently Used" list, provide:
+- Name & Position
+- Recent form analysis (if they appear multiple times in last 3 games)
+- Scoring/Assist likelihood (High/Medium/Low) based on:
+  * Season stats (if available in Top Scorers section AND player is in recent lineup)
+  * Recent appearances (regularity in last 3 games)
+  * Team's attacking output
+- Example: "Haaland (ST) - High scoring likelihood. Appeared in all 3 recent games. Team averages 2.5 goals/game"
+
+Injuries/Suspensions:
+- EVERY player from injuries section + their impact on team strength
+
+AWAY TEAM KEY PLAYERS:
+(Same analysis structure as home team)
+
+⚠️ SCORING PREDICTION GUIDELINES:
+- HIGH likelihood: Player appears in all/most recent games + team has high goal average + attacking position
+- MEDIUM likelihood: Player appears occasionally OR defensive-minded team OR midfield position
+- LOW likelihood: Recently substituted/benched OR team struggles to score OR defensive position
 
 Example CORRECT approach:
-"Bournemouth will rely on Evanilson and Cook (recently featured) in attack"
+"Salah (RW) - High scoring likelihood. Featured in all 3 recent matches. Liverpool averages 2.3 goals/game"
 
 Example WRONG approach:
-"Bournemouth will rely on Semenyo (10 goals)" ← Player may have transferred!
+"Semenyo (10 goals)" ← Player may have transferred! Don't mention unless in recent lineup
 
 If you're uncertain about specific players, use team statistics:
-"Bournemouth averages 1.5 goals/game" instead of naming individuals.
+"Their attacking options average 1.5 goals/game" instead of naming individuals.
 
 **4. RECENT FORM**
 - Last 5 results with scores
@@ -162,10 +187,11 @@ If you're uncertain about specific players, use team statistics:
 - Home vs Away form split
 
 **5. LEAGUE POSITION & STAKES**
-- Exact positions from standings
-- Points gap
-- What they're fighting for (be specific)
-- Pressure analysis
+⚠️ USE ONLY THE STANDINGS DATA PROVIDED ABOVE ⚠️
+- Exact positions from standings table (do NOT guess or use outdated knowledge)
+- Points gap to leaders/relegation (use actual numbers from data)
+- What they're fighting for based on CURRENT position (title race, top 4, mid-table, relegation)
+- Pressure analysis based on actual league context
 
 **6. HEAD-TO-HEAD HISTORY**
 - Recent meetings with scores
@@ -178,17 +204,42 @@ If you're uncertain about specific players, use team statistics:
 - Clean sheet likelihood
 - xG (expected goals) estimation
 
-**8. ATTACK VS DEFENSE MATCHUP**
+**8. MOST LIKELY GOAL SCORERS** 🎯 NEW SECTION
+Based on player analysis from section 3, predict who is most likely to score:
+
+HOME TEAM - Top 3 Most Likely Scorers:
+1. [Player Name] ([Position]) - [HIGH/MEDIUM/LOW] likelihood
+   - Rationale: [Goals/90, recent form, appearances]
+2. [Player Name] ([Position]) - [HIGH/MEDIUM/LOW] likelihood
+   - Rationale: [Stats and reasoning]
+3. [Player Name] ([Position]) - [HIGH/MEDIUM/LOW] likelihood
+   - Rationale: [Stats and reasoning]
+
+AWAY TEAM - Top 3 Most Likely Scorers:
+1. [Player Name] ([Position]) - [HIGH/MEDIUM/LOW] likelihood
+   - Rationale: [Goals/90, recent form, appearances]
+2. [Player Name] ([Position]) - [HIGH/MEDIUM/LOW] likelihood
+   - Rationale: [Stats and reasoning]
+3. [Player Name] ([Position]) - [HIGH/MEDIUM/LOW] likelihood
+   - Rationale: [Stats and reasoning]
+
+Anytime Goalscorer Bets:
+- Best Value: [Player with good odds vs likelihood]
+- Dark Horse: [Unexpected scorer with reasoning]
+
+⚠️ ONLY include players from "Players Recently Used" list!
+
+**9. ATTACK VS DEFENSE MATCHUP**
 - Home attack (${matchData.homeStats?.avgGoalsFor || 'N/A'} avg) vs Away defense (${matchData.awayStats?.avgGoalsAgainst || 'N/A'} avg)
 - Away attack (${matchData.awayStats?.avgGoalsFor || 'N/A'} avg) vs Home defense (${matchData.homeStats?.avgGoalsAgainst || 'N/A'} avg)
 - Expected goals for each team
 
-**9. RISK FACTORS**
+**10. RISK FACTORS**
 - What could change outcome
 - Variance factors
 - Lineup uncertainties
 
-**10. FINAL VERDICT**
+**11. FINAL VERDICT**
 Predicted Score: [X-X]
 Confidence: [0-100]%
 
@@ -222,29 +273,38 @@ Base your scoreline on ACTUAL data, not stereotypes.`;
   _buildStandingsSection(matchData) {
     if (!matchData.standings) {
       return `═══════════════════════════════════════════════════════════════
-LEAGUE STANDINGS
+CURRENT LEAGUE STANDINGS (2025-2026 Season)
 ═══════════════════════════════════════════════════════════════
 ⚠️ Standings data not available`;
     }
 
     const { home, away } = matchData.standings;
+    const higherTeam = (home?.position || 999) < (away?.position || 999) ? home : away;
+    const lowerTeam = higherTeam === home ? away : home;
+    const positionGap = Math.abs((home?.position || 0) - (away?.position || 0));
     
     return `═══════════════════════════════════════════════════════════════
-LEAGUE STANDINGS
+CURRENT LEAGUE STANDINGS (2025-2026 Season)
 ═══════════════════════════════════════════════════════════════
-HOME TEAM:
-- Position: ${home?.position || 'N/A'}
+⚠️ USE THESE POSITIONS - DO NOT USE OUTDATED KNOWLEDGE ⚠️
+
+HOME TEAM (${matchData.standings.home?.team || 'Unknown'}):
+- Position: ${home?.position || 'N/A'} / 20
 - Points: ${home?.points || 'N/A'}
 - Goal Difference: ${home?.goalsDiff || 'N/A'}
 - Form (last 5): ${home?.form || 'N/A'}
 
-AWAY TEAM:
-- Position: ${away?.position || 'N/A'}
+AWAY TEAM (${matchData.standings.away?.team || 'Unknown'}):
+- Position: ${away?.position || 'N/A'} / 20
 - Points: ${away?.points || 'N/A'}
 - Goal Difference: ${away?.goalsDiff || 'N/A'}
 - Form (last 5): ${away?.form || 'N/A'}
 
-Position Gap: ${Math.abs((home?.position || 0) - (away?.position || 0))} places`;
+Position Gap: ${positionGap} places
+${higherTeam?.team || 'Higher team'} is in ${higherTeam?.position || 'N/A'} place
+${lowerTeam?.team || 'Lower team'} is in ${lowerTeam?.position || 'N/A'} place
+
+⚠️ For Stakes Analysis: Use ONLY these current positions. If a team is in position 1-4, they're in title/Champions League race. Position 5-7 is Europa League race. Position 18-20 is relegation battle.`;
   }
 
   _buildFormSection(matchData) {
@@ -386,34 +446,67 @@ Win Probability (from API):
   _buildTopPlayersSection(matchData) {
     const formatPlayers = (players, stat = 'goals') => {
       if (!players || players.length === 0) return '  No data available';
-      return players.slice(0, 3).map(p => {
+      return players.slice(0, 5).map(p => {
         const stats = p.statistics?.[0];
-        const value = stat === 'goals' ? stats?.goals?.total : stats?.goals?.assists;
-        return `  • ${p.player?.name || 'Unknown'} (${value || 0} ${stat})`;
+        const goals = stats?.goals?.total || 0;
+        const assists = stats?.goals?.assists || 0;
+        const appearances = stats?.games?.appearences || 0;
+        const minutes = stats?.games?.minutes || 0;
+        const rating = stats?.games?.rating || 'N/A';
+        const position = stats?.games?.position || 'Unknown';
+        
+        // Calculate goals per 90 minutes
+        const goalsPer90 = minutes > 0 ? ((goals / minutes) * 90).toFixed(2) : '0.00';
+        
+        if (stat === 'goals') {
+          return `  • ${p.player?.name || 'Unknown'} (${position}) - ${goals} goals, ${assists} assists in ${appearances} apps | ${goalsPer90} goals/90min | Rating: ${rating}`;
+        } else {
+          return `  • ${p.player?.name || 'Unknown'} (${position}) - ${assists} assists, ${goals} goals in ${appearances} apps | Rating: ${rating}`;
+        }
       }).join('\n');
     };
 
     return `
 ═══════════════════════════════════════════════════════════════
-SEASON TOP SCORERS (⚠️ WARNING - MAY INCLUDE TRANSFERRED PLAYERS)
+SEASON PLAYER STATISTICS (⚠️ WARNING - MAY INCLUDE TRANSFERRED PLAYERS)
 ═══════════════════════════════════════════════════════════════
 ⚠️⚠️⚠️ CRITICAL WARNING - READ CAREFULLY ⚠️⚠️⚠️
 
 This section shows SEASON STATISTICS ONLY - it aggregates ALL matches from
 August to now, including players who may have TRANSFERRED TO OTHER CLUBS!
 
-DO NOT USE THIS DATA TO DETERMINE WHO IS AVAILABLE FOR THIS MATCH!
+USAGE RULES:
+1. Check if player appears in "Players Recently Used (Last 3 Games)" 
+2. If YES → You can reference their season stats for context
+3. If NO → DO NOT mention them (they may have transferred)
+4. If UNCERTAIN → Use generic team statistics instead
 
-Instead, determine available players from:
-1. Recent Form section → "Players Recently Used (Last 3 Games)" 
-2. Injuries section → Lists who is definitely OUT
-3. If uncertain, use generic terms like "their attacking options"
-
-HOME TEAM - Season Top Scorers (MAY INCLUDE TRANSFERRED PLAYERS):
+HOME TEAM - Top Scorers (USE ONLY IF IN RECENT LINEUP):
 ${formatPlayers(matchData.topScorers?.home || [], 'goals')}
 
-AWAY TEAM - Season Top Scorers (MAY INCLUDE TRANSFERRED PLAYERS):
+HOME TEAM - Top Assisters (USE ONLY IF IN RECENT LINEUP):
+${formatPlayers(matchData.topScorers?.home || [], 'assists')}
+
+AWAY TEAM - Top Scorers (USE ONLY IF IN RECENT LINEUP):
 ${formatPlayers(matchData.topScorers?.away || [], 'goals')}
+
+AWAY TEAM - Top Assisters (USE ONLY IF IN RECENT LINEUP):
+${formatPlayers(matchData.topScorers?.away || [], 'assists')}
+
+⚠️⚠️⚠️ PLAYER ANALYSIS PROCESS ⚠️⚠️⚠️
+
+Step 1: Check "Players Recently Used" list
+Step 2: For players in that list, check if they appear in stats above
+Step 3: If YES, analyze their:
+   - Goals/90 minutes (higher = more likely to score)
+   - Appearances (consistency indicator)
+   - Rating (form indicator)
+   - Position (attackers more likely to score)
+Step 4: Provide scoring likelihood: HIGH (>0.50 goals/90), MEDIUM (0.20-0.50), LOW (<0.20)
+
+Example Analysis:
+"Kane (ST) - HIGH scoring likelihood. 0.85 goals/90min, featured in all 3 recent games, 7.8 rating"
+"Saka (RW) - MEDIUM scoring likelihood. 0.35 goals/90min, 5 assists, appeared twice in last 3 games"
 
 ⚠️⚠️⚠️ DO NOT MENTION THESE PLAYERS AS "AVAILABLE" ⚠️⚠️⚠️
 
