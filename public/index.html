@@ -665,6 +665,9 @@
                 <button class="tab" onclick="switchTab('bundesliga')">🇩🇪 Bundesliga</button>
                 <button class="tab" onclick="switchTab('seriea')">🇮🇹 Serie A</button>
                 <button class="tab" onclick="switchTab('laliga')">🇪🇸 La Liga</button>
+                <button class="tab" onclick="switchTab('ligue1')">🇫🇷 Ligue 1</button>
+                <button class="tab" onclick="switchTab('ucl')">⭐ Champions League</button>
+                <button class="tab" onclick="switchTab('europa')">🏆 Europa League</button>
             </div>
 
             <div id="epl" class="tab-content active">
@@ -709,6 +712,39 @@
                     </div>
                 </div>
                 <div id="laliga-fixtures"></div>
+            </div>
+
+            <div id="ligue1" class="tab-content">
+                <div class="league-header">
+                    <div class="league-logo">🇫🇷</div>
+                    <div class="league-info">
+                        <h2>Ligue 1</h2>
+                        <p>France • Top Division</p>
+                    </div>
+                </div>
+                <div id="ligue1-fixtures"></div>
+            </div>
+
+            <div id="ucl" class="tab-content">
+                <div class="league-header">
+                    <div class="league-logo">⭐</div>
+                    <div class="league-info">
+                        <h2>UEFA Champions League</h2>
+                        <p>Europe • Elite Competition</p>
+                    </div>
+                </div>
+                <div id="ucl-fixtures"></div>
+            </div>
+
+            <div id="europa" class="tab-content">
+                <div class="league-header">
+                    <div class="league-logo">🏆</div>
+                    <div class="league-info">
+                        <h2>UEFA Europa League</h2>
+                        <p>Europe • Secondary Competition</p>
+                    </div>
+                </div>
+                <div id="europa-fixtures"></div>
             </div>
         </div>
 
