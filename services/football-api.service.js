@@ -282,9 +282,47 @@ class FootballAPIService {
    * @returns {Promise<Array>} Injury list
    */
   async getTeamInjuries(teamId, season) {
-    const endpoint = ENDPOINTS.injuries.byTeam(teamId, season);
-    const data = await this.request(endpoint);
-    return data.response || [];
+    try {
+      // Enhancement: Get injuries from the date of the team's most recent match
+      // This is more accurate than season-based queries
+      console.log(`   🏥 Finding most recent match for injury data...`);
+      
+      const recentMatchEndpoint = `fixtures?team=${teamId}&season=${season}&last=1`;
+      const recentMatchData = await this.request(recentMatchEndpoint);
+      
+      if (!recentMatchData.response || recentMatchData.response.length === 0) {
+        console.log(`   ⚠️  No recent matches found, falling back to season query`);
+        const endpoint = ENDPOINTS.injuries.byTeam(teamId, season);
+        const data = await this.request(endpoint);
+        return data.response || [];
+      }
+
+      // Get the date of the most recent match
+      const lastMatch = recentMatchData.response[0];
+      const matchDate = lastMatch.fixture.date.split('T')[0]; // Format: YYYY-MM-DD
+      const opponent = lastMatch.teams.home.id === teamId 
+        ? lastMatch.teams.away.name 
+        : lastMatch.teams.home.name;
+      
+      console.log(`   🏥 Fetching injuries from last match vs ${opponent} (${matchDate})...`);
+      
+      // Fetch injuries by specific date - more accurate than by season!
+      const endpoint = `injuries?date=${matchDate}&team=${teamId}&timezone=UTC`;
+      const data = await this.request(endpoint);
+      
+      console.log(`   📋 Found ${data.response?.length || 0} injuries from ${matchDate}`);
+      
+      return data.response || [];
+      
+    } catch (error) {
+      console.error(`   ⚠️  Could not fetch injuries by match date: ${error.message}`);
+      console.log(`   ⚠️  Falling back to season-based injury query...`);
+      
+      // Fallback to season-based query if date-based fails
+      const endpoint = ENDPOINTS.injuries.byTeam(teamId, season);
+      const data = await this.request(endpoint);
+      return data.response || [];
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -316,6 +354,73 @@ class FootballAPIService {
     const endpoint = ENDPOINTS.predictions.byFixture(fixtureId);
     const data = await this.request(endpoint);
     return data.response?.[0] || null;
+  }
+
+  /**
+   * Get team squad with player stats and ratings
+   * @param {number} teamId - Team ID
+   * @param {number} season - Season year
+   * @returns {Promise<Array>} Squad with stats
+   */
+  async getSquadWithStats(teamId, season) {
+    try {
+      const endpoint = `players?team=${teamId}&season=${season}`;
+      const data = await this.request(endpoint);
+      
+      if (!data.response || data.response.length === 0) {
+        return [];
+      }
+
+      // Process and extract key player data
+      return data.response.map(player => {
+        const stats = player.statistics?.[0]; // Current season stats
+        
+        return {
+          id: player.player.id,
+          name: player.player.name,
+          photo: player.player.photo,
+          age: player.player.age,
+          number: player.player.number || null,
+          position: player.player.position || stats?.games?.position || 'Unknown',
+          
+          // Performance stats
+          rating: stats?.games?.rating ? parseFloat(stats.games.rating) : null,
+          appearances: stats?.games?.appearences || 0,
+          lineups: stats?.games?.lineups || 0,
+          minutes: stats?.games?.minutes || 0,
+          
+          // Attacking stats
+          goals: stats?.goals?.total || 0,
+          assists: stats?.goals?.assists || 0,
+          shots: stats?.shots?.total || 0,
+          shotsOn: stats?.shots?.on || 0,
+          
+          // Passing stats
+          passes: stats?.passes?.total || 0,
+          passAccuracy: stats?.passes?.accuracy || 0,
+          keyPasses: stats?.passes?.key || 0,
+          
+          // Defensive stats
+          tackles: stats?.tackles?.total || 0,
+          interceptions: stats?.tackles?.interceptions || 0,
+          duelsWon: stats?.duels?.won || 0,
+          duelsTotal: stats?.duels?.total || 0,
+          
+          // Goalkeeper stats (if applicable)
+          saves: stats?.goals?.saves || 0,
+          conceded: stats?.goals?.conceded || 0,
+          cleanSheets: stats?.goals?.cleansheet || 0,
+          
+          // Discipline
+          yellowCards: stats?.cards?.yellow || 0,
+          redCards: stats?.cards?.red || 0
+        };
+      }).sort((a, b) => (b.rating || 0) - (a.rating || 0)); // Sort by rating
+      
+    } catch (error) {
+      console.error(`   ⚠️  Error fetching squad stats: ${error.message}`);
+      return [];
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -356,23 +461,28 @@ class FootballAPIService {
       ]);
 
       console.log(`   📊 Batch 3/3: Injuries, predictions, and top players...`);
-      const [homeInjuries, awayInjuries, apiPrediction, topScorers, topAssists] = await Promise.all([
+      const [homeInjuries, awayInjuries, apiPrediction, topScorers, topAssists, homeSquad, awaySquad] = await Promise.all([
         this.getTeamInjuries(homeTeamId, season),
         this.getTeamInjuries(awayTeamId, season),
         this.getAPIPrediction(fixtureId),
         this.getTopScorers(leagueId, season),
-        this.getTopAssists(leagueId, season)
+        this.getTopAssists(leagueId, season),
+        this.getSquadWithStats(homeTeamId, season),
+        this.getSquadWithStats(awayTeamId, season)
       ]);
 
       // Process and structure the data
+      const processedHomeRecent = this._processRecentMatches(homeRecentMatches, homeTeamId);
+      const processedAwayRecent = this._processRecentMatches(awayRecentMatches, awayTeamId);
+
       const matchData = {
         // Team Statistics
         homeStats: this._extractTeamStats(homeStats),
         awayStats: this._extractTeamStats(awayStats),
 
         // Recent Form
-        homeRecentMatches: this._processRecentMatches(homeRecentMatches, homeTeamId),
-        awayRecentMatches: this._processRecentMatches(awayRecentMatches, awayTeamId),
+        homeRecentMatches: processedHomeRecent,
+        awayRecentMatches: processedAwayRecent,
 
         // Head to Head
         h2h: this._processH2H(h2hMatches, homeTeamId),
@@ -380,8 +490,8 @@ class FootballAPIService {
         // Standings
         standings: this._extractStandings(standings, homeTeamId, awayTeamId),
 
-        // API Predictions (for lineups and win percentages)
-        apiPrediction: this._extractAPIPrediction(apiPrediction),
+        // API Predictions (for lineups and win percentages) - with lineup fallback
+        apiPrediction: this._extractAPIPrediction(apiPrediction, processedHomeRecent, processedAwayRecent),
 
         // Injuries
         homeInjuries: this._processInjuries(homeInjuries),
@@ -390,6 +500,10 @@ class FootballAPIService {
         // League Context
         topScorers: this._processTopScorers(topScorers, homeTeamId, awayTeamId),
         topAssists: this._processTopAssists(topAssists, homeTeamId, awayTeamId),
+
+        // Squad Stats & Ratings (for detailed player analysis)
+        homeSquad: homeSquad || [],
+        awaySquad: awaySquad || [],
 
         // Metadata
         fetchedAt: new Date().toISOString(),
@@ -543,8 +657,29 @@ class FootballAPIService {
     };
   }
 
-  _extractAPIPrediction(prediction) {
+  _extractAPIPrediction(prediction, homeRecentMatches = null, awayRecentMatches = null) {
     if (!prediction) return null;
+
+    // Get predicted lineups from API
+    let homePredictedLineup = prediction.predictions?.lineup?.home || null;
+    let awayPredictedLineup = prediction.predictions?.lineup?.away || null;
+
+    // Fallback to last game's lineup if no prediction available
+    if (!homePredictedLineup && homeRecentMatches && homeRecentMatches.matches && homeRecentMatches.matches.length > 0) {
+      const lastMatch = homeRecentMatches.matches[0];
+      if (lastMatch.lineup && lastMatch.lineup.formation) {
+        homePredictedLineup = lastMatch.lineup.formation;
+        console.log(`   ℹ️  Using home team's last game formation: ${homePredictedLineup}`);
+      }
+    }
+
+    if (!awayPredictedLineup && awayRecentMatches && awayRecentMatches.matches && awayRecentMatches.matches.length > 0) {
+      const lastMatch = awayRecentMatches.matches[0];
+      if (lastMatch.lineup && lastMatch.lineup.formation) {
+        awayPredictedLineup = lastMatch.lineup.formation;
+        console.log(`   ℹ️  Using away team's last game formation: ${awayPredictedLineup}`);
+      }
+    }
 
     return {
       winProbability: {
@@ -553,8 +688,8 @@ class FootballAPIService {
         away: prediction.predictions?.percent?.away || 'N/A'
       },
       predictedLineups: {
-        home: prediction.predictions?.lineup?.home || 'N/A',
-        away: prediction.predictions?.lineup?.away || 'N/A'
+        home: homePredictedLineup || 'N/A',
+        away: awayPredictedLineup || 'N/A'
       },
       advice: prediction.predictions?.advice || 'N/A'
     };

@@ -206,6 +206,10 @@ class PredictionOrchestrator {
           home: matchData.homeRecentMatches || [],
           away: matchData.awayRecentMatches || []
         },
+        squad: {
+          home: matchData.homeSquad || [],
+          away: matchData.awaySquad || []
+        },
         generatedAt: new Date().toISOString()
       };
 

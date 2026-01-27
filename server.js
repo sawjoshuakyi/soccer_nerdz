@@ -235,6 +235,42 @@ app.get('/api/predictions/status/:fixtureId', (req, res) => {
   });
 });
 
+/**
+ * GET /api/predictions/:fixtureId
+ * Get prediction for a specific fixture by ID
+ */
+app.get('/api/predictions/:fixtureId', (req, res) => {
+  const { fixtureId } = req.params;
+  const prediction = orchestrator.getPrediction(parseInt(fixtureId));
+
+  if (!prediction) {
+    return res.status(404).json({
+      error: 'Prediction not found',
+      message: 'No prediction available for this fixture yet'
+    });
+  }
+
+  res.json(prediction);
+});
+
+/**
+ * GET /api/match-data/:fixtureId
+ * Get comprehensive match data including squad stats
+ */
+app.get('/api/match-data/:fixtureId', (req, res) => {
+  const { fixtureId } = req.params;
+  const matchData = cache.getMatchData(parseInt(fixtureId));
+
+  if (!matchData) {
+    return res.status(404).json({
+      error: 'Match data not found',
+      message: 'Match data not available yet'
+    });
+  }
+
+  res.json(matchData);
+});
+
 // ═══════════════════════════════════════════════════════════════
 // SYSTEM ENDPOINTS
 // ═══════════════════════════════════════════════════════════════

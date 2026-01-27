@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REGARDED NERD - Elite League Prediction Engine</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Football Predictions - AI Analysis</title>
+    
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Chart.js Radar (for hexagonal charts) -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-radar@1.0.0/dist/chartjs-chart-radar.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -13,114 +18,501 @@
         }
 
         :root {
-            --primary: #00ff88;
-            --secondary: #00d4ff;
-            --dark-bg: #0a0e1a;
-            --card-bg: #131825;
-            --border: #1e2841;
-            --text-primary: #ffffff;
-            --text-secondary: #8b92b0;
-            --danger: #ff3366;
-            --warning: #ffaa00;
-            --success: #00ff88;
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #000000;
+            --dark-card: #1a1a1a;
+            --dark-lighter: #2a2a2a;
+            --light: #f3f4f6;
+            --white: #ffffff;
+            --green-glow: 0 0 20px rgba(16, 185, 129, 0.3);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--dark-bg);
-            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
             min-height: 100vh;
-            background-image: 
-                radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 50%);
+            padding: 1rem;
+            color: var(--white);
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 40px 20px;
         }
 
         header {
-            margin-bottom: 60px;
-            text-align: center;
+            background: var(--dark-card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--green-glow);
+            border: 1px solid var(--primary);
         }
 
-        .logo {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 56px;
+        h1 {
+            color: var(--primary);
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            margin-bottom: 0.5rem;
             font-weight: 900;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -2px;
-            margin-bottom: 12px;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
         }
 
-        .tagline {
-            font-family: 'Space Mono', monospace;
-            font-size: 12px;
-            color: var(--text-secondary);
-            letter-spacing: 3px;
-            text-transform: uppercase;
+        .subtitle {
+            color: #9ca3af;
+            font-size: clamp(0.875rem, 2vw, 1rem);
         }
 
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 0;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
-        }
-
-        .tabs {
+        /* League Tabs */
+        .league-tabs {
             display: flex;
-            background: var(--dark-bg);
-            border-bottom: 2px solid var(--border);
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            -webkit-overflow-scrolling: touch;
         }
 
-        .tab {
-            flex: 1;
-            padding: 20px;
-            font-family: 'Space Mono', monospace;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            text-align: center;
+        .league-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .league-tabs::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        .league-tab {
+            padding: 0.75rem 1.5rem;
+            background: var(--dark-card);
+            border: 1px solid var(--dark-lighter);
+            border-radius: 0.5rem;
             cursor: pointer;
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            transition: all 0.3s ease;
-            position: relative;
+            white-space: nowrap;
+            font-weight: 600;
+            transition: all 0.3s;
+            flex-shrink: 0;
+            color: var(--white);
         }
 
-        .tab:hover {
+        .league-tab:hover {
+            background: var(--dark-lighter);
+            border-color: var(--primary);
+        }
+
+        .league-tab.active {
+            background: var(--primary);
+            color: var(--dark);
+            box-shadow: var(--green-glow);
+        }
+
+        /* Fixtures Grid */
+        .fixtures-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .fixture-card {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-lighter);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .fixture-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--green-glow);
+            border-color: var(--primary);
+        }
+
+        .match-date {
+            font-size: 0.875rem;
+            color: #9ca3af;
+            margin-bottom: 1rem;
+        }
+
+        .teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .team {
+            text-align: center;
+            flex: 1;
+        }
+
+        .team-name {
+            font-weight: 700;
+            font-size: 1.125rem;
             color: var(--primary);
-            background: rgba(0, 255, 136, 0.05);
         }
 
-        .tab.active {
+        .vs {
+            font-weight: 700;
             color: var(--primary);
-            background: var(--card-bg);
+            padding: 0 1rem;
         }
 
-        .tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
+        .prediction-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--success);
+            color: var(--dark);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .no-prediction {
+            background: #4b5563;
+            color: var(--white);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
             left: 0;
-            right: 0;
-            height: 2px;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 1rem;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        .modal-content {
+            background: var(--dark-card);
+            border: 1px solid var(--primary);
+            border-radius: 1rem;
+            max-width: 1200px;
+            width: 100%;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+            position: relative;
+            box-shadow: var(--green-glow);
+        }
+
+        .modal-header {
+            padding: 2rem;
+            border-bottom: 2px solid var(--dark-lighter);
+            position: sticky;
+            top: 0;
+            background: var(--dark-card);
+            z-index: 10;
+        }
+
+        .modal-header h2 {
+            color: var(--primary);
+            font-weight: 900;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--dark-lighter);
+            border: 1px solid var(--primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            color: var(--primary);
+        }
+
+        .close-btn:hover {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: var(--white);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: var(--dark-lighter);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--dark-lighter);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #9ca3af;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Charts Container */
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .chart-card {
+            background: var(--dark-lighter);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--dark-lighter);
+        }
+
+        .chart-title {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            font-size: 1.25rem;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto !important;
+        }
+
+        /* Prediction Text */
+        .prediction-text {
+            background: var(--dark-lighter);
+            padding: 2rem;
+            border-radius: 0.75rem;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            font-family: 'Georgia', serif;
+            color: var(--white);
+            border: 1px solid var(--dark-lighter);
+        }
+
+        /* Highlight key data */
+        .prediction-text strong,
+        .player-name,
+        .stat-value {
+            color: var(--primary);
+            font-weight: 900;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #9ca3af;
+        }
+
+        .spinner {
+            border: 3px solid var(--dark-lighter);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .chart-card > div[style*="grid-template-columns: 400px"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            #radarChart {
+                max-width: 400px;
+                margin: 0 auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .fixtures-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .comparison-bar-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.25rem;
+            }
+            
+            .percentage-label {
+                text-align: center !important;
+            }
+            
+            .bar-container {
+                order: 2;
+            }
+            
+            .percentage-label.left {
+                order: 1;
+            }
+            
+            .percentage-label.right {
+                order: 3;
+            }
+
+            .modal-content {
+                margin: 0;
+                border-radius: 0;
+                max-height: 100vh;
+            }
+
+            .modal-header, .modal-body {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Player Stats Table */
+        .players-section {
+            margin: 2rem 0;
+        }
+
+        .players-section h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .player-card {
+            background: var(--dark-lighter);
+            border: 1px solid var(--dark-lighter);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            display: flex;
+            gap: 1rem;
+            transition: all 0.3s;
+        }
+
+        .player-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+
+        .player-info {
+            flex: 1;
+        }
+
+        .player-name {
+            font-weight: 900;
+            margin-bottom: 0.25rem;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .player-position {
+            font-size: 0.875rem;
+            color: #9ca3af;
+            margin-bottom: 0.5rem;
+        }
+
+        .player-stats {
+            font-size: 0.875rem;
+            color: var(--white);
+            font-weight: 600;
+        }
+
+        .rating-badge {
+            display: inline-block;
+            padding: 0.5rem 0.75rem;
+            background: var(--primary);
+            color: var(--dark);
+            border-radius: 0.5rem;
+            font-weight: 900;
+            font-size: 1.25rem;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        .rating-excellent {
+            background: var(--success);
+        }
+
+        .rating-good {
             background: var(--primary);
         }
 
+        .rating-average {
+            background: var(--warning);
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--dark-lighter);
+            border: 1px solid var(--dark-lighter);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            color: var(--white);
+        }
+
+        .tab-btn:hover {
+            background: var(--dark-card);
+            border-color: var(--primary);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: var(--dark);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+
         .tab-content {
-            padding: 32px;
             display: none;
         }
 
@@ -128,922 +520,708 @@
             display: block;
         }
 
-        .league-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 32px;
-            padding-bottom: 24px;
-            border-bottom: 2px solid var(--border);
+        /* Team Comparison Bars */
+        .comparison-container {
+            margin: 0;
         }
 
-        .league-logo {
-            width: 64px;
-            height: 64px;
-            border-radius: 12px;
-            background: var(--dark-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
+        .comparison-row {
+            margin-bottom: 1.25rem;
         }
 
-        .league-info h2 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
+        .comparison-label {
             color: var(--primary);
-            margin-bottom: 4px;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
         }
 
-        .league-info p {
-            font-family: 'Space Mono', monospace;
-            font-size: 12px;
-            color: var(--text-secondary);
-            letter-spacing: 1px;
-        }
-
-        .fixture-list {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .fixture-item {
-            background: var(--dark-bg);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .fixture-item:hover {
-            border-color: var(--primary);
-            transform: translateX(4px);
-            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.15);
-        }
-
-        .fixture-teams {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .team {
+        .comparison-bar-wrapper {
             display: flex;
             align-items: center;
-            gap: 12px;
-            flex: 1;
+            gap: 0.75rem;
         }
 
-        .team.away {
-            flex-direction: row-reverse;
+        .percentage-label {
+            font-weight: 900;
+            color: var(--primary);
+            font-size: 0.875rem;
+            min-width: 45px;
+        }
+
+        .percentage-label.left {
             text-align: right;
+            color: #3b82f6;
         }
 
-        .team-logo {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
+        .percentage-label.right {
+            text-align: left;
+            color: var(--success);
         }
 
-        .team-name {
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .vs-separator {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 20px;
-            font-weight: 900;
-            color: var(--text-secondary);
-            padding: 0 20px;
-        }
-
-        .fixture-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-family: 'Space Mono', monospace;
-        }
-
-        .fixture-date {
-            display: flex;
-            gap: 16px;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            font-family: 'Space Mono', monospace;
-            letter-spacing: 1px;
-            background: rgba(0, 212, 255, 0.15);
-            color: var(--secondary);
-            border: 1px solid var(--secondary);
-        }
-
-        .loader {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-container {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .loading-container .loader {
-            width: 48px;
-            height: 48px;
-            border-width: 4px;
-            margin: 0 auto 20px;
-        }
-
-        .error-message {
-            background: rgba(255, 51, 102, 0.1);
-            border: 2px solid var(--danger);
-            border-radius: 12px;
-            padding: 20px;
-            color: var(--danger);
-            margin-top: 20px;
-            font-size: 14px;
-        }
-
-        .prediction-output {
-            background: linear-gradient(135deg, rgba(0, 255, 136, 0.05), rgba(0, 212, 255, 0.05));
-            border: 2px solid var(--primary);
-            border-radius: 16px;
-            padding: 40px;
-            margin-top: 32px;
-        }
-
-        .prediction-header {
-            text-align: center;
-            padding-bottom: 32px;
-            border-bottom: 2px solid var(--border);
-            margin-bottom: 32px;
-        }
-
-        .prediction-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 36px;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 12px;
-        }
-
-        .prediction-match {
-            font-size: 18px;
-            color: var(--text-secondary);
-            font-family: 'Space Mono', monospace;
-        }
-
-        .prediction-content {
-            line-height: 1.9;
-            font-size: 15px;
-        }
-
-        .prediction-content h2 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--primary);
-            margin-top: 40px;
-            margin-bottom: 20px;
-        }
-
-        .prediction-content h3 {
-            font-weight: 700;
-            font-size: 19px;
-            margin-top: 28px;
-            margin-bottom: 14px;
-            color: #ffffff;
-        }
-
-        .prediction-content p {
-            margin-bottom: 16px;
-            color: var(--text-secondary);
-        }
-
-        .prediction-content strong {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        .prediction-loading {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .prediction-loading .loader {
-            width: 56px;
-            height: 56px;
-            border-width: 5px;
-            margin: 0 auto 24px;
-        }
-
-        .loading-stage {
-            margin-top: 12px;
-            font-family: 'Space Mono', monospace;
-            font-size: 13px;
-            color: var(--primary);
-        }
-
-        .loading-progress {
-            width: 100%;
-            max-width: 400px;
-            height: 6px;
-            background: var(--border);
-            border-radius: 3px;
-            margin: 24px auto 0;
+        .bar-container {
+            flex: 1;
+            height: 32px;
+            background: var(--dark);
+            border-radius: 4px;
             overflow: hidden;
+            position: relative;
+            display: flex;
+            border: 1px solid rgba(148, 163, 184, 0.2);
         }
 
-        .loading-bar {
+        .bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            width: 0%;
-            animation: progress 3s ease-in-out forwards;
-        }
-
-        @keyframes progress {
-            to { width: 100%; }
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-secondary);
-        }
-
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-            opacity: 0.3;
-        }
-
-        @media (max-width: 768px) {
-            .logo {
-                font-size: 36px;
-            }
-            
-            .tabs {
-                flex-wrap: wrap;
-            }
-            
-            .tab {
-                flex: 1 1 50%;
-                font-size: 11px;
-            }
-            
-            .team-name {
-                font-size: 15px;
-            }
-            
-            .fixture-meta {
-                flex-direction: column;
-                gap: 8px;
-                align-items: flex-start;
-            }
-        }
-
-        /* Formation Diagram Styles - Livescore Style */
-        .formation-container-livescore {
-          max-width: 600px;
-          margin: 30px auto;
-          background: var(--card-bg);
-          border-radius: 16px;
-          border: 1px solid var(--border);
-          overflow: hidden;
-        }
-
-        .formation-header-livescore {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 20px 30px;
-          background: linear-gradient(135deg, var(--border) 0%, var(--card-bg) 100%);
-          border-bottom: 1px solid var(--border);
-        }
-
-        .team-section {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .team-name-livescore {
-          font-size: 18px;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-
-        .formation-badge {
-          display: inline-block;
-          padding: 4px 12px;
-          background: var(--primary);
-          color: var(--dark-bg);
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-        }
-
-        .vs-text {
-          font-size: 14px;
-          font-weight: 700;
-          color: var(--text-secondary);
-          opacity: 0.5;
-        }
-
-        .pitch-livescore {
-          position: relative;
-          background: linear-gradient(180deg, #1a4d2e 0%, #1a4d2e 48%, #ffffff 48%, #ffffff 52%, #1a4d2e 52%, #1a4d2e 100%);
-          padding: 30px 20px;
-          min-height: 600px;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-        }
-
-        .pitch-livescore::before {
-          content: '';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 100px;
-          height: 100px;
-          border: 2px solid rgba(255,255,255,0.3);
-          border-radius: 50%;
-          pointer-events: none;
-        }
-
-        .pitch-livescore::after {
-          content: '';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 8px;
-          height: 8px;
-          background: rgba(255,255,255,0.5);
-          border-radius: 50%;
-          pointer-events: none;
-        }
-
-        .center-line-indicator {
-          position: absolute;
-          top: 50%;
-          left: 0;
-          right: 0;
-          transform: translateY(-50%);
-          display: flex;
-          justify-content: space-between;
-          padding: 0 20px;
-          font-size: 11px;
-          color: rgba(255,255,255,0.4);
-          font-weight: 600;
-          pointer-events: none;
-          z-index: 1;
-        }
-
-        .team-lineup {
-          position: relative;
-          z-index: 2;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .away-team {
-          justify-content: flex-start;
-        }
-
-        .home-team {
-          justify-content: flex-end;
-        }
-
-        .lineup-rows {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .player-row-livescore {
-          display: flex;
-          justify-content: space-around;
-          align-items: center;
-          gap: 15px;
-          padding: 0 10px;
-        }
-
-        .player-livescore {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-          flex: 1;
-          max-width: 100px;
-        }
-
-        .player-dot {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          border: 3px solid;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 700;
-          font-size: 14px;
-          color: var(--dark-bg);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          position: relative;
-        }
-
-        .shirt-number {
-          font-family: 'Orbitron', sans-serif;
-          font-weight: 900;
-        }
-
-        .player-info {
-          text-align: center;
-          width: 100%;
-        }
-
-        .player-name-livescore {
-          font-size: 11px;
-          font-weight: 600;
-          color: var(--text-primary);
-          line-height: 1.2;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .injury-badge {
-          font-size: 9px;
-          color: var(--danger);
-          margin-top: 2px;
-          font-weight: 600;
-        }
-
-        .injured-livescore .player-dot {
-          opacity: 0.5;
-        }
-
-        .injured-livescore .player-dot::after {
-          content: '⚠️';
-          position: absolute;
-          top: -8px;
-          right: -8px;
-          font-size: 16px;
-        }
-
-        @media (max-width: 768px) {
-          .formation-header-livescore {
-            flex-direction: column;
-            gap: 15px;
-            text-align: center;
-          }
-          
-          .team-section {
+            transition: width 0.8s ease;
+            display: flex;
             align-items: center;
-          }
-          
-          .pitch-livescore {
-            padding: 20px 10px;
-            min-height: 500px;
-          }
-          
-          .player-dot {
-            width: 35px;
-            height: 35px;
-            font-size: 12px;
-          }
-          
-          .player-name-livescore {
-            font-size: 10px;
-          }
-          
-          .player-row-livescore {
-            gap: 10px;
-          }
+            font-weight: 700;
+            font-size: 0.75rem;
+            position: relative;
+        }
+
+        .bar-fill.home {
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+            justify-content: flex-end;
+            padding-right: 0.5rem;
+        }
+
+        .bar-fill.away {
+            background: linear-gradient(90deg, #047857, #10b981);
+            justify-content: flex-start;
+            padding-left: 0.5rem;
+        }
+
+        .bar-team-name {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 700;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <div class="logo">PREDICT AI</div>
-            <div class="tagline">Elite League Prediction Engine</div>
+            <h1>⚽ NERDZ WITH STATS</h1>
+            <p class="subtitle">Soccer Analysis with Player Stats & Ratings</p>
         </header>
 
-        <div class="card">
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('epl')">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</button>
-                <button class="tab" onclick="switchTab('bundesliga')">🇩🇪 Bundesliga</button>
-                <button class="tab" onclick="switchTab('seriea')">🇮🇹 Serie A</button>
-                <button class="tab" onclick="switchTab('laliga')">🇪🇸 La Liga</button>
-                <button class="tab" onclick="switchTab('ligue1')">🇫🇷 Ligue 1</button>
-                <button class="tab" onclick="switchTab('ucl')">⭐ Champions League</button>
-                <button class="tab" onclick="switchTab('europa')">🏆 Europa League</button>
-            </div>
-
-            <div id="epl" class="tab-content active">
-                <div class="league-header">
-                    <div class="league-logo">⚽</div>
-                    <div class="league-info">
-                        <h2>Premier League</h2>
-                        <p>England • Top Division</p>
-                    </div>
-                </div>
-                <div id="epl-fixtures"></div>
-            </div>
-
-            <div id="bundesliga" class="tab-content">
-                <div class="league-header">
-                    <div class="league-logo">⚽</div>
-                    <div class="league-info">
-                        <h2>Bundesliga</h2>
-                        <p>Germany • Top Division</p>
-                    </div>
-                </div>
-                <div id="bundesliga-fixtures"></div>
-            </div>
-
-            <div id="seriea" class="tab-content">
-                <div class="league-header">
-                    <div class="league-logo">⚽</div>
-                    <div class="league-info">
-                        <h2>Serie A</h2>
-                        <p>Italy • Top Division</p>
-                    </div>
-                </div>
-                <div id="seriea-fixtures"></div>
-            </div>
-
-            <div id="laliga" class="tab-content">
-                <div class="league-header">
-                    <div class="league-logo">⚽</div>
-                    <div class="league-info">
-                        <h2>La Liga</h2>
-                        <p>Spain • Top Division</p>
-                    </div>
-                </div>
-                <div id="laliga-fixtures"></div>
-            </div>
-
-            <div id="ligue1" class="tab-content">
-                <div class="league-header">
-                    <div class="league-logo">🇫🇷</div>
-                    <div class="league-info">
-                        <h2>Ligue 1</h2>
-                        <p>France • Top Division</p>
-                    </div>
-                </div>
-                <div id="ligue1-fixtures"></div>
-            </div>
-
-            <div id="ucl" class="tab-content">
-                <div class="league-header">
-                    <div class="league-logo">⭐</div>
-                    <div class="league-info">
-                        <h2>UEFA Champions League</h2>
-                        <p>Europe • Elite Competition</p>
-                    </div>
-                </div>
-                <div id="ucl-fixtures"></div>
-            </div>
-
-            <div id="europa" class="tab-content">
-                <div class="league-header">
-                    <div class="league-logo">🏆</div>
-                    <div class="league-info">
-                        <h2>UEFA Europa League</h2>
-                        <p>Europe • Secondary Competition</p>
-                    </div>
-                </div>
-                <div id="europa-fixtures"></div>
-            </div>
+        <div class="league-tabs" id="leagueTabs">
+            <button class="league-tab active" data-league="epl">Premier League</button>
+            <button class="league-tab" data-league="laliga">La Liga</button>
+            <button class="league-tab" data-league="bundesliga">Bundesliga</button>
+            <button class="league-tab" data-league="seriea">Serie A</button>
+            <button class="league-tab" data-league="ligue1">Ligue 1</button>
+            <button class="league-tab" data-league="ucl">Champions League</button>
+            <button class="league-tab" data-league="europa">Europa League</button>
         </div>
 
-        <div id="predictionContainer"></div>
+        <div class="fixtures-grid" id="fixturesGrid">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading fixtures...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Match Detail Modal -->
+    <div class="modal" id="matchModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+                <h2 id="modalTitle">Match Details</h2>
+                <p id="modalSubtitle" class="subtitle"></p>
+            </div>
+            <div class="modal-body">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="showTab('prediction')">Analysis</button>
+                    <button class="tab-btn" onclick="showTab('stats')">Team Stats</button>
+                    <button class="tab-btn" onclick="showTab('players')">Player Ratings</button>
+                </div>
+
+                <div id="tab-prediction" class="tab-content active">
+                    <div id="predictionContent" class="prediction-text"></div>
+                </div>
+
+                <div id="tab-stats" class="tab-content">
+                    <div class="charts-container" id="chartsContainer"></div>
+                </div>
+
+                <div id="tab-players" class="tab-content">
+                    <div class="players-section">
+                        <h3>Home Team Players</h3>
+                        <div class="players-grid" id="homePlayersGrid"></div>
+                    </div>
+                    <div class="players-section">
+                        <h3>Away Team Players</h3>
+                        <div class="players-grid" id="awayPlayersGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Auto-detect API URL based on environment
-        const API_BASE_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000/api' 
-            : `${window.location.origin}/api`;
-        
-        console.log('API Base URL:', API_BASE_URL); // For debugging
         let currentLeague = 'epl';
+        let currentFixtures = [];
+        let currentPrediction = null;
 
-        // Initialize: Load EPL fixtures on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            loadFixtures('epl');
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFixtures(currentLeague);
+            setupLeagueTabs();
         });
 
-        function switchTab(leagueKey) {
-            // Update tab buttons
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // Update tab content
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(leagueKey).classList.add('active');
-
-            currentLeague = leagueKey;
-
-            // Load fixtures
-            loadFixtures(leagueKey);
+        // League Tabs
+        function setupLeagueTabs() {
+            document.querySelectorAll('.league-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.league-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentLeague = tab.dataset.league;
+                    loadFixtures(currentLeague);
+                });
+            });
         }
 
-        async function loadFixtures(leagueKey) {
-            const container = document.getElementById(`${leagueKey}-fixtures`);
-            
-            // Check if already loaded
-            if (container.innerHTML && !container.innerHTML.includes('loading-container')) {
-                return;
-            }
-
-            container.innerHTML = `
-                <div class="loading-container">
-                    <div class="loader"></div>
-                    <p style="color: var(--text-secondary); margin-top: 16px;">Loading upcoming fixtures...</p>
-                </div>
-            `;
+        // Load Fixtures
+        async function loadFixtures(league) {
+            const grid = document.getElementById('fixturesGrid');
+            grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading fixtures...</p></div>';
 
             try {
-                const response = await fetch(`${API_BASE_URL}/fixtures/${leagueKey}`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
+                const response = await fetch(`/api/fixtures/${league}`);
                 const fixtures = await response.json();
+                currentFixtures = fixtures;
 
-                if (!fixtures || fixtures.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">📅</div>
-                            <p>No upcoming fixtures found</p>
-                        </div>
-                    `;
+                if (fixtures.length === 0) {
+                    grid.innerHTML = '<div class="loading"><p>No upcoming fixtures found</p></div>';
                     return;
                 }
 
-                displayFixtures(leagueKey, fixtures);
-
+                grid.innerHTML = '';
+                fixtures.forEach(fixture => {
+                    const card = createFixtureCard(fixture);
+                    grid.appendChild(card);
+                });
             } catch (error) {
                 console.error('Error loading fixtures:', error);
-                container.innerHTML = `
-                    <div class="error-message">
-                        <strong>Error:</strong> ${error.message}<br>
-                        Make sure the backend server is running on port 3000
-                    </div>
-                `;
+                grid.innerHTML = '<div class="loading"><p>Error loading fixtures</p></div>';
             }
         }
 
-        function displayFixtures(leagueKey, fixtures) {
-            const container = document.getElementById(`${leagueKey}-fixtures`);
-            
-            const html = `
-                <div class="fixture-list">
-                    ${fixtures.map(fixture => `
-                        <div class="fixture-item" onclick='predictMatch(${JSON.stringify(fixture).replace(/'/g, "&apos;")})'>
-                            <div class="fixture-teams">
-                                <div class="team">
-                                    <img src="${fixture.teams.home.logo}" alt="${fixture.teams.home.name}" class="team-logo">
-                                    <span class="team-name">${fixture.teams.home.name}</span>
-                                </div>
-                                <span class="vs-separator">VS</span>
-                                <div class="team away">
-                                    <img src="${fixture.teams.away.logo}" alt="${fixture.teams.away.name}" class="team-logo">
-                                    <span class="team-name">${fixture.teams.away.name}</span>
-                                </div>
-                            </div>
-                            <div class="fixture-meta">
-                                <div class="fixture-date">
-                                    <span>📅 ${new Date(fixture.fixture.date).toLocaleDateString('en-US', { 
-                                        weekday: 'short',
-                                        month: 'short', 
-                                        day: 'numeric',
-                                        year: 'numeric'
-                                    })}</span>
-                                    <span>🕐 ${new Date(fixture.fixture.date).toLocaleTimeString('en-US', { 
-                                        hour: '2-digit', 
-                                        minute: '2-digit'
-                                    })}</span>
-                                    <span>🏟️ ${fixture.fixture.venue.name || 'TBD'}</span>
-                                </div>
-                                <span class="status-badge">UPCOMING</span>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+        // Create Fixture Card
+        function createFixtureCard(fixture) {
+            const card = document.createElement('div');
+            card.className = 'fixture-card';
+            card.onclick = () => showMatchDetail(fixture);
 
-            container.innerHTML = html;
-        }
+            const date = new Date(fixture.fixture.date);
+            const homeTeam = fixture.teams.home.name;
+            const awayTeam = fixture.teams.away.name;
 
-        async function predictMatch(fixture) {
-            const container = document.getElementById('predictionContainer');
-            container.innerHTML = `
-                <div class="prediction-output">
-                    <div class="prediction-loading">
-                        <div class="loader"></div>
-                        <h3 style="font-family: 'Orbitron', sans-serif; font-size: 24px; margin-bottom: 8px;">Loading Prediction</h3>
-                        <p class="loading-stage">Checking for pre-generated analysis...</p>
-                        <div class="loading-progress"><div class="loading-bar"></div></div>
+            card.innerHTML = `
+                <div class="match-date">${date.toLocaleDateString()} • ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                <div class="teams">
+                    <div class="team">
+                        <div class="team-name">${homeTeam}</div>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="team">
+                        <div class="team-name">${awayTeam}</div>
                     </div>
                 </div>
+                <div style="text-align: center;">
+                    <span class="prediction-badge" id="badge-${fixture.fixture.id}">
+                        <span class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></span>
+                    </span>
+                </div>
             `;
-            container.scrollIntoView({ behavior: 'smooth' });
+
+            // Check if prediction exists
+            checkPrediction(fixture.fixture.id);
+
+            return card;
+        }
+
+        // Check Prediction
+        async function checkPrediction(fixtureId) {
+            try {
+                const response = await fetch(`/api/predictions/${fixtureId}`);
+                const badge = document.getElementById(`badge-${fixtureId}`);
+                
+                if (response.ok) {
+                    badge.innerHTML = '✓ Prediction Available';
+                    badge.classList.remove('no-prediction');
+                } else {
+                    badge.innerHTML = 'No Prediction Yet';
+                    badge.classList.add('no-prediction');
+                }
+            } catch (error) {
+                const badge = document.getElementById(`badge-${fixtureId}`);
+                badge.innerHTML = 'Error';
+                badge.classList.add('no-prediction');
+            }
+        }
+
+        // Show Match Detail
+        async function showMatchDetail(fixture) {
+            const modal = document.getElementById('matchModal');
+            const title = document.getElementById('modalTitle');
+            const subtitle = document.getElementById('modalSubtitle');
+
+            title.textContent = `${fixture.teams.home.name} vs ${fixture.teams.away.name}`;
+            subtitle.textContent = `${fixture.league.name} • ${new Date(fixture.fixture.date).toLocaleString()}`;
+
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            // Load prediction
+            await loadPrediction(fixture.fixture.id);
+        }
+
+        // Load Prediction
+        async function loadPrediction(fixtureId) {
+            const predictionContent = document.getElementById('predictionContent');
+            predictionContent.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading prediction...</p></div>';
 
             try {
-                // Request prediction (READ-ONLY - no generation)
-                const predictionResponse = await fetch(`${API_BASE_URL}/predict`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ fixture })
-                });
-
-                if (!predictionResponse.ok) {
-                    // Check if it's a 404 (prediction not available)
-                    if (predictionResponse.status === 404) {
-                        const errorData = await predictionResponse.json();
-                        container.innerHTML = `
-                            <div class="prediction-output">
-                                <div style="background: linear-gradient(135deg, #1a1f35 0%, #2d3748 100%); 
-                                           border: 2px solid #fbbf24; 
-                                           border-radius: 16px; 
-                                           padding: 40px; 
-                                           text-align: center;">
-                                    <div style="font-size: 64px; margin-bottom: 20px;">⏳</div>
-                                    <h3 style="font-family: 'Orbitron', sans-serif; 
-                                               font-size: 28px; 
-                                               color: #fbbf24; 
-                                               margin-bottom: 16px;">
-                                        Prediction Coming Soon
-                                    </h3>
-                                    <p style="font-size: 18px; 
-                                              color: #a0aec0; 
-                                              margin-bottom: 24px; 
-                                              line-height: 1.6;">
-                                        ${errorData.message || 'Our AI system generates predictions for upcoming matches daily.'}
-                                    </p>
-                                    <div style="background: rgba(251, 191, 36, 0.1); 
-                                               border-radius: 12px; 
-                                               padding: 24px; 
-                                               margin-top: 24px;">
-                                        <p style="font-size: 16px; color: #e2e8f0; margin-bottom: 12px;">
-                                            <strong>${errorData.match}</strong>
-                                        </p>
-                                        <p style="font-size: 14px; color: #a0aec0;">
-                                            ${new Date(errorData.date).toLocaleString()}
-                                        </p>
-                                    </div>
-                                    <p style="font-size: 14px; 
-                                              color: #718096; 
-                                              margin-top: 24px;">
-                                        💡 Predictions are generated daily at 3 AM. Check back soon!
-                                    </p>
-                                </div>
-                            </div>
-                        `;
-                        return;
-                    }
-                    throw new Error('Failed to fetch prediction');
-                }
-
-                const predictionData = await predictionResponse.json();
+                const response = await fetch(`/api/predictions/${fixtureId}`);
                 
-                if (predictionData.generated) {
-                    displayPrediction(fixture, predictionData.prediction);
-                } else {
-                    throw new Error('Unexpected response format');
+                if (!response.ok) {
+                    predictionContent.innerHTML = '<p>No prediction available yet. Predictions are generated daily.</p>';
+                    return;
                 }
 
+                const data = await response.json();
+                currentPrediction = data;
+
+                console.log('Prediction loaded:', data);
+
+                // Format prediction text with bold player names and stats
+                let formattedText = data.prediction;
+                
+                // Bold numbers followed by % or goals/assists patterns
+                formattedText = formattedText.replace(/(\d+(?:\.\d+)?%)/g, '<strong style="color: var(--primary);">$1</strong>');
+                formattedText = formattedText.replace(/(\d+-\d+)/g, '<strong style="color: var(--primary);">$1</strong>');
+                
+                // Bold player names (capitalize words in key player sections)
+                // This will bold any capitalized words that look like names
+                formattedText = formattedText.replace(/\b([A-Z][a-z]+ [A-Z][a-z]+)\b/g, '<strong style="color: var(--success);">$1</strong>');
+                formattedText = formattedText.replace(/\b([A-Z][a-z]+(?:'[A-Z][a-z]+)?)\b(?= \(|:| -| will| has| is)/g, '<strong style="color: var(--success);">$1</strong>');
+                
+                // Bold team names
+                const homeTeam = data.fixture?.homeTeam || '';
+                const awayTeam = data.fixture?.awayTeam || '';
+                if (homeTeam) {
+                    const regex = new RegExp(`\\b${homeTeam}\\b`, 'g');
+                    formattedText = formattedText.replace(regex, `<strong style="color: #3b82f6;">${homeTeam}</strong>`);
+                }
+                if (awayTeam) {
+                    const regex = new RegExp(`\\b${awayTeam}\\b`, 'g');
+                    formattedText = formattedText.replace(regex, `<strong style="color: var(--success);">${awayTeam}</strong>`);
+                }
+                
+                // Bold section headers (text followed by colon)
+                formattedText = formattedText.replace(/^([A-Z][A-Z\s&]+):/gm, '<strong style="color: var(--primary); font-size: 1.1em;">$1:</strong>');
+                
+                predictionContent.innerHTML = formattedText;
+                predictionContent.style.whiteSpace = 'pre-wrap';
+                predictionContent.style.lineHeight = '1.8';
+                
+                // Load charts and players with error handling
+                try {
+                    if (data.metadata || data.winProbability || data.form) {
+                        createCharts(data);
+                    }
+                } catch (chartError) {
+                    console.error('Error creating charts:', chartError);
+                }
+                
+                try {
+                    displayPlayers(data);
+                } catch (playerError) {
+                    console.error('Error displaying players:', playerError);
+                }
+                
             } catch (error) {
-                console.error('Error fetching prediction:', error);
-                container.innerHTML = `
-                    <div class="prediction-output">
-                        <div class="error-message">
-                            <strong>Error:</strong> ${error.message}<br>
-                            Please try again or contact support if the issue persists.
-                        </div>
-                    </div>
-                `;
+                console.error('Error loading prediction:', error);
+                predictionContent.innerHTML = '<p>Error loading prediction. Please try again later.</p>';
             }
         }
 
-        function displayPrediction(fixture, predictionData) {
-            // Handle both old format (just text) and new format (object)
-            const predictionText = typeof predictionData === 'string' ? predictionData : predictionData.prediction;
-            const formations = predictionData.formations || { home: 'N/A', away: 'N/A' };
-            const injuries = predictionData.injuries || { home: [], away: [] };
-            
-            let formattedText = predictionText
-                .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-                .replace(/^# (.+)$/gm, '<h2>$1</h2>')
-                .replace(/\n\n/g, '</p><p>')
-                .replace(/^\d+\.\s\*\*(.+?)\*\*/gm, '<h3>$1</h3>');
+        // Create Charts
+        function createCharts(data) {
+            const container = document.getElementById('chartsContainer');
+            container.innerHTML = '';
 
-            const html = `
-                <div class="prediction-output">
-                    <div class="prediction-header">
-                        <div class="prediction-title">Match Prediction Report</div>
-                        <div class="prediction-match">
-                            ${fixture.teams.home.name} vs ${fixture.teams.away.name}<br>
-                            ${fixture.league.name} • ${new Date(fixture.fixture.date).toLocaleDateString('en-US', { 
-                                weekday: 'long',
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric'
-                            })}
-                        </div>
+            // Extract team names
+            const homeTeam = data.fixture?.homeTeam || 'Home';
+            const awayTeam = data.fixture?.awayTeam || 'Away';
+
+            // Get form data
+            const homeMatches = Array.isArray(data.form?.home) ? data.form.home : (data.form?.home?.matches || []);
+            const awayMatches = Array.isArray(data.form?.away) ? data.form.away : (data.form?.away?.matches || []);
+            
+            // Calculate detailed statistics
+            const homeWins = homeMatches.filter(m => m.result === 'W').length;
+            const awayWins = awayMatches.filter(m => m.result === 'W').length;
+            const homeDraws = homeMatches.filter(m => m.result === 'D').length;
+            const awayDraws = awayMatches.filter(m => m.result === 'D').length;
+            const homeLosses = homeMatches.filter(m => m.result === 'L').length;
+            const awayLosses = awayMatches.filter(m => m.result === 'L').length;
+
+            // Calculate goals from match scores
+            let homeGoalsFor = 0, homeGoalsAgainst = 0;
+            let awayGoalsFor = 0, awayGoalsAgainst = 0;
+            
+            homeMatches.forEach(m => {
+                const scores = m.score.split('-');
+                homeGoalsFor += parseInt(scores[0]) || 0;
+                homeGoalsAgainst += parseInt(scores[1]) || 0;
+            });
+            
+            awayMatches.forEach(m => {
+                const scores = m.score.split('-');
+                awayGoalsFor += parseInt(scores[0]) || 0;
+                awayGoalsAgainst += parseInt(scores[1]) || 0;
+            });
+
+            // Get API prediction data
+            const apiPred = data.winProbability || {};
+            const homeWinProb = parseFloat(apiPred.home || 50);
+            const awayWinProb = parseFloat(apiPred.away || 50);
+
+            // Calculate normalized stats (0-100 scale)
+            const maxGames = 5;
+            const homeStrength = (homeWins * 3 + homeDraws) / (maxGames * 3) * 100;
+            const awayStrength = (awayWins * 3 + awayDraws) / (maxGames * 3) * 100;
+            
+            const homeAttacking = Math.min(homeGoalsFor / maxGames * 20, 100);
+            const awayAttacking = Math.min(awayGoalsFor / maxGames * 20, 100);
+            
+            const homeDefensive = Math.max(100 - (homeGoalsAgainst / maxGames * 20), 0);
+            const awayDefensive = Math.max(100 - (awayGoalsAgainst / maxGames * 20), 0);
+            
+            // Poisson distribution approximation (based on goals)
+            const homePoisson = Math.min((homeGoalsFor / (awayGoalsAgainst || 1)) * 30, 100);
+            const awayPoisson = Math.min((awayGoalsFor / (homeGoalsAgainst || 1)) * 30, 100);
+
+            // Create main comparison section
+            const mainSection = document.createElement('div');
+            mainSection.className = 'chart-card';
+            mainSection.style.gridColumn = '1 / -1';
+            
+            mainSection.innerHTML = `
+                <div class="chart-title">📊 Team Comparison Analysis</div>
+                <div style="display: grid; grid-template-columns: 400px 1fr; gap: 2rem; margin-top: 1.5rem;">
+                    <div style="position: relative;">
+                        <canvas id="radarChart" width="400" height="400"></canvas>
                     </div>
-                    
-                    <!-- Formation Diagram -->
-                    <div id="formation-display"></div>
-                    
-                    <div class="prediction-content">
-                        <p>${formattedText}</p>
+                    <div class="comparison-container">
+                        <div class="comparison-row">
+                            <div class="comparison-label">STRENGTH</div>
+                            <div class="comparison-bar-wrapper">
+                                <span class="percentage-label left">${Math.round(homeStrength/(homeStrength+awayStrength)*100)}%</span>
+                                <div class="bar-container">
+                                    <div class="bar-fill home" style="width: ${homeStrength/(homeStrength+awayStrength)*100}%">
+                                        <span class="bar-team-name">${homeTeam}</span>
+                                    </div>
+                                    <div class="bar-fill away" style="width: ${awayStrength/(homeStrength+awayStrength)*100}%">
+                                        <span class="bar-team-name">${awayTeam}</span>
+                                    </div>
+                                </div>
+                                <span class="percentage-label right">${Math.round(awayStrength/(homeStrength+awayStrength)*100)}%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="comparison-row">
+                            <div class="comparison-label">ATTACKING POTENTIAL</div>
+                            <div class="comparison-bar-wrapper">
+                                <span class="percentage-label left">${Math.round(homeAttacking/(homeAttacking+awayAttacking)*100)}%</span>
+                                <div class="bar-container">
+                                    <div class="bar-fill home" style="width: ${homeAttacking/(homeAttacking+awayAttacking)*100}%"></div>
+                                    <div class="bar-fill away" style="width: ${awayAttacking/(homeAttacking+awayAttacking)*100}%"></div>
+                                </div>
+                                <span class="percentage-label right">${Math.round(awayAttacking/(homeAttacking+awayAttacking)*100)}%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="comparison-row">
+                            <div class="comparison-label">DEFENSIVE POTENTIAL</div>
+                            <div class="comparison-bar-wrapper">
+                                <span class="percentage-label left">${Math.round(homeDefensive/(homeDefensive+awayDefensive)*100)}%</span>
+                                <div class="bar-container">
+                                    <div class="bar-fill home" style="width: ${homeDefensive/(homeDefensive+awayDefensive)*100}%"></div>
+                                    <div class="bar-fill away" style="width: ${awayDefensive/(homeDefensive+awayDefensive)*100}%"></div>
+                                </div>
+                                <span class="percentage-label right">${Math.round(awayDefensive/(homeDefensive+awayDefensive)*100)}%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="comparison-row">
+                            <div class="comparison-label">POISSON DISTRIBUTION</div>
+                            <div class="comparison-bar-wrapper">
+                                <span class="percentage-label left">${Math.round(homePoisson/(homePoisson+awayPoisson)*100)}%</span>
+                                <div class="bar-container">
+                                    <div class="bar-fill home" style="width: ${homePoisson/(homePoisson+awayPoisson)*100}%"></div>
+                                    <div class="bar-fill away" style="width: ${awayPoisson/(homePoisson+awayPoisson)*100}%"></div>
+                                </div>
+                                <span class="percentage-label right">${Math.round(awayPoisson/(homePoisson+awayPoisson)*100)}%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="comparison-row">
+                            <div class="comparison-label">STRENGTH H2H</div>
+                            <div class="comparison-bar-wrapper">
+                                <span class="percentage-label left">${homeWins + awayWins > 0 ? Math.round((homeWins/(homeWins+awayWins))*100) : 50}%</span>
+                                <div class="bar-container">
+                                    <div class="bar-fill home" style="width: ${homeWins + awayWins > 0 ? (homeWins/(homeWins+awayWins)*100) : 50}%"></div>
+                                    <div class="bar-fill away" style="width: ${homeWins + awayWins > 0 ? (awayWins/(homeWins+awayWins)*100) : 50}%"></div>
+                                </div>
+                                <span class="percentage-label right">${homeWins + awayWins > 0 ? Math.round((awayWins/(homeWins+awayWins))*100) : 50}%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="comparison-row">
+                            <div class="comparison-label">GOALS H2H</div>
+                            <div class="comparison-bar-wrapper">
+                                <span class="percentage-label left">${homeGoalsFor + awayGoalsFor > 0 ? Math.round((homeGoalsFor/(homeGoalsFor+awayGoalsFor))*100) : 50}%</span>
+                                <div class="bar-container">
+                                    <div class="bar-fill home" style="width: ${homeGoalsFor + awayGoalsFor > 0 ? (homeGoalsFor/(homeGoalsFor+awayGoalsFor)*100) : 50}%"></div>
+                                    <div class="bar-fill away" style="width: ${awayGoalsFor + awayGoalsFor > 0 ? (awayGoalsFor/(homeGoalsFor+awayGoalsFor)*100) : 50}%"></div>
+                                </div>
+                                <span class="percentage-label right">${homeGoalsFor + awayGoalsFor > 0 ? Math.round((awayGoalsFor/(homeGoalsFor+awayGoalsFor))*100) : 50}%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="comparison-row">
+                            <div class="comparison-label">WINS THE GAME</div>
+                            <div class="comparison-bar-wrapper">
+                                <span class="percentage-label left">${Math.round(homeWinProb/(homeWinProb+awayWinProb)*100)}%</span>
+                                <div class="bar-container">
+                                    <div class="bar-fill home" style="width: ${homeWinProb/(homeWinProb+awayWinProb)*100}%"></div>
+                                    <div class="bar-fill away" style="width: ${awayWinProb/(homeWinProb+awayWinProb)*100}%"></div>
+                                </div>
+                                <span class="percentage-label right">${Math.round(awayWinProb/(homeWinProb+awayWinProb)*100)}%</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
+            
+            container.appendChild(mainSection);
 
-            document.getElementById('predictionContainer').innerHTML = html;
-            
-            // Render formation diagram if we have formation data
-            if (formations.home !== 'N/A' && formations.away !== 'N/A' && window.renderFormationDiagram) {
-                const injuredPlayers = [
-                    ...injuries.home.map(i => i.name),
-                    ...injuries.away.map(i => i.name)
-                ];
+            // Create Radar Chart with 8 metrics like demo
+            const radarCtx = document.getElementById('radarChart').getContext('2d');
+            new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Strength', 'Goals For', 'Defensive', 'Wins', 'Attacking', 'Goals Against', 'Draws', 'Losses'],
+                    datasets: [{
+                        label: homeTeam,
+                        data: [
+                            homeStrength,
+                            homeGoalsFor * 10,
+                            homeDefensive,
+                            homeWins * 20,
+                            homeAttacking,
+                            Math.max(100 - homeGoalsAgainst * 10, 0),
+                            homeDraws * 20,
+                            Math.max(100 - homeLosses * 20, 0)
+                        ],
+                        backgroundColor: 'rgba(59, 130, 246, 0.25)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        pointHoverRadius: 0
+                    }, {
+                        label: awayTeam,
+                        data: [
+                            awayStrength,
+                            awayGoalsFor * 10,
+                            awayDefensive,
+                            awayWins * 20,
+                            awayAttacking,
+                            Math.max(100 - awayGoalsAgainst * 10, 0),
+                            awayDraws * 20,
+                            Math.max(100 - awayLosses * 20, 0)
+                        ],
+                        backgroundColor: 'rgba(16, 185, 129, 0.25)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        pointHoverRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 100,
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 20,
+                                backdropColor: 'transparent',
+                                color: '#94a3b8',
+                                font: {
+                                    size: 11
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(148, 163, 184, 0.2)',
+                                circular: true
+                            },
+                            angleLines: {
+                                color: 'rgba(148, 163, 184, 0.2)'
+                            },
+                            pointLabels: {
+                                color: '#10b981',
+                                font: {
+                                    size: 13,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#ffffff',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: 15,
+                                boxWidth: 15,
+                                boxHeight: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            titleColor: '#10b981',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#10b981',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Display Players
+        function displayPlayers(data) {
+            const homeGrid = document.getElementById('homePlayersGrid');
+            const awayGrid = document.getElementById('awayPlayersGrid');
+
+            // Check if squad data is in the prediction object
+            if (data.squad && data.squad.home && data.squad.away) {
+                renderPlayers('homePlayersGrid', data.squad.home);
+                renderPlayers('awayPlayersGrid', data.squad.away);
+            } else {
+                // Fallback: try to fetch from match data endpoint
+                homeGrid.innerHTML = '<p>Loading player data...</p>';
+                awayGrid.innerHTML = '<p>Loading player data...</p>';
+                fetchMatchData(data.fixture.id);
+            }
+        }
+
+        // Fetch Match Data (includes squad)
+        async function fetchMatchData(fixtureId) {
+            try {
+                const response = await fetch(`/api/match-data/${fixtureId}`);
                 
-                window.renderFormationDiagram({
-                    homeTeam: fixture.teams.home.name,
-                    awayTeam: fixture.teams.away.name,
-                    homeFormation: formations.home,
-                    awayFormation: formations.away,
-                    homeLineup: parseFormationToLineup(formations.home),
-                    awayLineup: parseFormationToLineup(formations.away),
-                    injuries: injuredPlayers
-                });
+                if (!response.ok) {
+                    document.getElementById('homePlayersGrid').innerHTML = '<p>Player data not available</p>';
+                    document.getElementById('awayPlayersGrid').innerHTML = '<p>Player data not available</p>';
+                    return;
+                }
+                
+                const matchData = await response.json();
+
+                if (matchData.homeSquad && matchData.awaySquad) {
+                    renderPlayers('homePlayersGrid', matchData.homeSquad);
+                    renderPlayers('awayPlayersGrid', matchData.awaySquad);
+                } else {
+                    document.getElementById('homePlayersGrid').innerHTML = '<p>No player data available</p>';
+                    document.getElementById('awayPlayersGrid').innerHTML = '<p>No player data available</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching match data:', error);
+                document.getElementById('homePlayersGrid').innerHTML = '<p>Error loading player data</p>';
+                document.getElementById('awayPlayersGrid').innerHTML = '<p>Error loading player data</p>';
             }
         }
-        
-        // Helper function to convert formation string to lineup structure
-        function parseFormationToLineup(formation) {
-            const [def, mid, att] = formation.split('-').map(Number);
-            if (!def || !mid || !att) {
-                // Default 4-3-3 if invalid
-                return {
-                    attackers: [{name: 'FW'}, {name: 'ST'}, {name: 'FW'}],
-                    midfielders: [{name: 'CM'}, {name: 'CM'}, {name: 'CM'}],
-                    defenders: [{name: 'LB'}, {name: 'CB'}, {name: 'CB'}, {name: 'RB'}],
-                    goalkeeper: {name: 'GK'}
-                };
+
+        // Render Players
+        function renderPlayers(gridId, squad) {
+            const grid = document.getElementById(gridId);
+            
+            if (!squad || squad.length === 0) {
+                grid.innerHTML = '<p>No player data available</p>';
+                return;
             }
             
-            return {
-                attackers: Array(att).fill(null).map(() => ({name: 'ATT'})),
-                midfielders: Array(mid).fill(null).map(() => ({name: 'MID'})),
-                defenders: Array(def).fill(null).map(() => ({name: 'DEF'})),
-                goalkeeper: {name: 'GK'}
-            };
+            grid.innerHTML = '';
+
+            const topPlayers = squad.slice(0, 11); // Top 11 by rating
+
+            topPlayers.forEach(player => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+
+                const rating = player.rating || 0;
+                let ratingClass = 'rating-average';
+                if (rating >= 7.5) ratingClass = 'rating-excellent';
+                else if (rating >= 7.0) ratingClass = 'rating-good';
+
+                card.innerHTML = `
+                    <div class="player-info">
+                        <div class="player-name">${player.name}</div>
+                        <div class="player-position">${player.position}</div>
+                        <div class="player-stats">
+                            ${player.goals || 0}G ${player.assists || 0}A • ${player.appearances || 0} apps
+                        </div>
+                    </div>
+                    <span class="rating-badge ${ratingClass}">${rating > 0 ? rating.toFixed(1) : 'N/A'}</span>
+                `;
+
+                grid.appendChild(card);
+            });
         }
+
+        // Show Tab
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // Close Modal
+        function closeModal() {
+            document.getElementById('matchModal').classList.remove('show');
+            document.body.style.overflow = 'auto';
+            currentPrediction = null;
+        }
+
+        // Close on outside click
+        document.getElementById('matchModal').addEventListener('click', (e) => {
+            if (e.target.id === 'matchModal') {
+                closeModal();
+            }
+        });
     </script>
-    <script src="/formation-diagram.js"></script>
 </body>
 </html>
