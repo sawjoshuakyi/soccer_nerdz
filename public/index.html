@@ -150,6 +150,38 @@
         .team {
             text-align: center;
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .team-logo {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .team-logo-small {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .team-logo-large {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+        }
+
+        .team-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            justify-content: center;
         }
 
         .team-name {
@@ -226,6 +258,11 @@
         .modal-header h2 {
             color: var(--primary);
             font-weight: 900;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-header .team-header {
+            margin-bottom: 0.5rem;
         }
 
         .close-btn {
@@ -362,6 +399,15 @@
                 max-width: 400px;
                 margin: 0 auto;
             }
+
+            .team-logo-large {
+                width: 48px;
+                height: 48px;
+            }
+
+            .team-header {
+                flex-wrap: wrap;
+            }
         }
         
         @media (max-width: 768px) {
@@ -403,6 +449,24 @@
 
             .modal-header, .modal-body {
                 padding: 1.5rem;
+            }
+
+            .team-logo {
+                width: 32px;
+                height: 32px;
+            }
+
+            .team-logo-large {
+                width: 40px;
+                height: 40px;
+            }
+
+            .team-header {
+                font-size: 0.9rem;
+            }
+
+            .team-header span {
+                font-size: 1rem !important;
             }
         }
 
@@ -607,8 +671,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>⚽ NERDZ WITH STATS</h1>
-            <p class="subtitle">Soccer Analysis with Player Stats & Ratings</p>
+            <h1>⚽ Football Predictions</h1>
+            <p class="subtitle">AI-Powered Match Analysis with Player Stats & Ratings</p>
         </header>
 
         <div class="league-tabs" id="leagueTabs">
@@ -639,7 +703,7 @@
             </div>
             <div class="modal-body">
                 <div class="tab-buttons">
-                    <button class="tab-btn active" onclick="showTab('prediction')">Analysis</button>
+                    <button class="tab-btn active" onclick="showTab('prediction')">AI Prediction</button>
                     <button class="tab-btn" onclick="showTab('stats')">Team Stats</button>
                     <button class="tab-btn" onclick="showTab('players')">Player Ratings</button>
                 </div>
@@ -724,15 +788,19 @@
             const date = new Date(fixture.fixture.date);
             const homeTeam = fixture.teams.home.name;
             const awayTeam = fixture.teams.away.name;
+            const homeLogo = fixture.teams.home.logo;
+            const awayLogo = fixture.teams.away.logo;
 
             card.innerHTML = `
                 <div class="match-date">${date.toLocaleDateString()} • ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                 <div class="teams">
                     <div class="team">
+                        <img src="${homeLogo}" alt="${homeTeam}" class="team-logo" onerror="this.style.display='none'">
                         <div class="team-name">${homeTeam}</div>
                     </div>
                     <div class="vs">VS</div>
                     <div class="team">
+                        <img src="${awayLogo}" alt="${awayTeam}" class="team-logo" onerror="this.style.display='none'">
                         <div class="team-name">${awayTeam}</div>
                     </div>
                 </div>
@@ -775,7 +843,23 @@
             const title = document.getElementById('modalTitle');
             const subtitle = document.getElementById('modalSubtitle');
 
-            title.textContent = `${fixture.teams.home.name} vs ${fixture.teams.away.name}`;
+            // Store fixture for use in other functions
+            window.currentFixture = fixture;
+
+            const homeTeam = fixture.teams.home.name;
+            const awayTeam = fixture.teams.away.name;
+            const homeLogo = fixture.teams.home.logo;
+            const awayLogo = fixture.teams.away.logo;
+
+            title.innerHTML = `
+                <div class="team-header">
+                    <img src="${homeLogo}" alt="${homeTeam}" class="team-logo-large" onerror="this.style.display='none'">
+                    <span>${homeTeam}</span>
+                    <span style="color: var(--primary); font-weight: 900;">VS</span>
+                    <span>${awayTeam}</span>
+                    <img src="${awayLogo}" alt="${awayTeam}" class="team-logo-large" onerror="this.style.display='none'">
+                </div>
+            `;
             subtitle.textContent = `${fixture.league.name} • ${new Date(fixture.fixture.date).toLocaleString()}`;
 
             modal.classList.add('show');
@@ -919,6 +1003,17 @@
             
             mainSection.innerHTML = `
                 <div class="chart-title">📊 Team Comparison Analysis</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 2rem; margin: 1rem 0; padding: 1rem; background: rgba(16, 185, 129, 0.05); border-radius: 0.5rem; border: 1px solid rgba(16, 185, 129, 0.2);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <img src="${window.currentFixture?.teams?.home?.logo || ''}" alt="${homeTeam}" class="team-logo" onerror="this.style.display='none'" style="width: 40px; height: 40px;">
+                        <span style="color: #3b82f6; font-weight: 900; font-size: 1.1rem;">${homeTeam}</span>
+                    </div>
+                    <span style="color: var(--primary); font-weight: 900; font-size: 1.2rem;">VS</span>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="color: var(--success); font-weight: 900; font-size: 1.1rem;">${awayTeam}</span>
+                        <img src="${window.currentFixture?.teams?.away?.logo || ''}" alt="${awayTeam}" class="team-logo" onerror="this.style.display='none'" style="width: 40px; height: 40px;">
+                    </div>
+                </div>
                 <div style="display: grid; grid-template-columns: 400px 1fr; gap: 2rem; margin-top: 1.5rem;">
                     <div style="position: relative;">
                         <canvas id="radarChart" width="400" height="400"></canvas>
