@@ -28,47 +28,55 @@ class LeagueStatisticsService {
     console.log(`   📊 Calculating league stats for ${leagueConfig.name}...`);
 
     try {
-      // Fetch finished matches from current season using date range
-      // NOTE: API-Football doesn't support 'last' parameter for leagues, only teams
-      // So we fetch all matches from season start to now (filtered by FT status)
-      const today = new Date();
-      const seasonStart = new Date(leagueConfig.season, 7, 1); // August 1st
-      
-      const from = seasonStart.toISOString().split('T')[0];
-      const to = today.toISOString().split('T')[0];
-      
-      const endpoint = `fixtures?league=${leagueConfig.id}&season=${leagueConfig.season}&from=${from}&to=${to}&status=FT`;
-      const data = await this.footballAPI.request(endpoint);
-
-      if (!data.response || data.response.length === 0) {
-        console.log(`   ⚠️  No data available for ${leagueConfig.name}`);
-        return null;
-      }
-
-      const stats = this._calculateStatistics(data.response);
-      
-      if (!stats) {
-        console.log(`   ⚠️  Unable to calculate stats for ${leagueConfig.name}`);
-        return null;
-      }
-
-      const leagueStats = {
-        league: leagueConfig.name,
-        season: leagueConfig.season,
-        stats,
-        calculatedAt: new Date().toISOString()
-      };
-
-      // Cache for 12 hours
-      this.cache.setLeagueStats(leagueKey, leagueStats);
-      
-      console.log(`   ✅ League stats calculated for ${leagueConfig.name}`);
-      return leagueStats;
-
+      const stats = await this._fetchLeagueStatsForSeason(leagueKey, leagueConfig, leagueConfig.season);
+      return stats;
     } catch (error) {
+      // If 403, log and return null (API tier limitation)
+      if (error.response?.status === 403) {
+        console.log(`   ⚠️  League stats endpoint not accessible (403 - API tier limitation)`);
+        return null;
+      }
+      
       console.error(`   ❌ Error calculating league stats: ${error.message}`);
       return null;
     }
+  }
+
+  async _fetchLeagueStatsForSeason(leagueKey, leagueConfig, season) {
+    // Fetch finished matches from season using date range
+    const today = new Date();
+    const seasonStart = new Date(season, 7, 1); // August 1st
+    
+    const from = seasonStart.toISOString().split('T')[0];
+    const to = today.toISOString().split('T')[0];
+    
+    const endpoint = `fixtures?league=${leagueConfig.id}&season=${season}&from=${from}&to=${to}&status=FT`;
+    const data = await this.footballAPI.request(endpoint);
+
+    if (!data.response || data.response.length === 0) {
+      console.log(`   ⚠️  No data available for ${leagueConfig.name} (season ${season})`);
+      return null;
+    }
+
+    const stats = this._calculateStatistics(data.response);
+    
+    if (!stats) {
+      console.log(`   ⚠️  Unable to calculate stats for ${leagueConfig.name}`);
+      return null;
+    }
+
+    const leagueStats = {
+      league: leagueConfig.name,
+      season: season,
+      stats,
+      calculatedAt: new Date().toISOString()
+    };
+
+    // Cache for 12 hours
+    this.cache.setLeagueStats(leagueKey, leagueStats);
+    
+    console.log(`   ✅ League stats calculated for ${leagueConfig.name} (season ${season})`);
+    return leagueStats;
   }
 
   /**

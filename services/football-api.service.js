@@ -122,18 +122,28 @@ class FootballAPIService {
     const to = future.toISOString().split('T')[0];
 
     const endpoint = ENDPOINTS.fixtures.upcoming(leagueId, season, from, to);
-    const data = await this.request(endpoint);
+    
+    try {
+      const data = await this.request(endpoint);
 
-    if (!data.response || data.response.length === 0) {
-      return [];
+      if (!data.response || data.response.length === 0) {
+        return [];
+      }
+
+      // Filter for not started matches only
+      const now = new Date();
+      return data.response.filter(fixture => 
+        new Date(fixture.fixture.date) > now && 
+        fixture.fixture.status.short === 'NS'
+      );
+    } catch (error) {
+      // If 403, log and return empty (API tier limitation)
+      if (error.response?.status === 403) {
+        console.log(`   ⚠️  Fixtures endpoint not accessible (403 - API tier limitation)`);
+        return [];
+      }
+      throw error;
     }
-
-    // Filter for not started matches only
-    const now = new Date();
-    return data.response.filter(fixture => 
-      new Date(fixture.fixture.date) > now && 
-      fixture.fixture.status.short === 'NS'
-    );
   }
 
   /**
@@ -166,7 +176,7 @@ class FootballAPIService {
         console.log(`   ✅ ${leagueConfig.name}: ${fixtures.length} upcoming matches`);
         
         // Small delay between leagues
-        await this._delay(1000);
+        await this._delay(0);
 
       } catch (error) {
         console.error(`   ❌ ${leagueKey}: ${error.message}`);
@@ -203,6 +213,28 @@ class FootballAPIService {
     return data.response || [];
   }
 
+  /**
+   * Get starting 11 from last played fixture for a team (using API lineups endpoint)
+   * @param {number} teamId - Team ID
+   * @param {number} season - Season year
+   * @returns {Promise<Array>} Array of player names in starting 11
+   */
+  async getLastStarting11(teamId, season) {
+    // 1. Get last played fixture for this team
+    const fixturesEndpoint = `fixtures?team=${teamId}&season=${season}&last=1`;
+    const fixturesData = await this.request(fixturesEndpoint);
+    const lastFixture = fixturesData.response && fixturesData.response[0];
+    if (!lastFixture) return [];
+    const fixtureId = lastFixture.fixture.id;
+    // 2. Get lineups for that fixture
+    const lineupsEndpoint = `fixtures/lineups?fixture=${fixtureId}&team=${teamId}`;
+    const lineupsData = await this.request(lineupsEndpoint);
+    const lineup = lineupsData.response && lineupsData.response[0];
+    if (!lineup || !lineup.startXI) return [];
+    // 3. Return array of player names in starting 11
+    return lineup.startXI.map(p => p.player.name).filter(Boolean);
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // TEAM DATA
   // ═══════════════════════════════════════════════════════════════
@@ -229,6 +261,129 @@ class FootballAPIService {
     const endpoint = ENDPOINTS.teams.squad(teamId);
     const data = await this.request(endpoint);
     return data.response || [];
+  }
+
+  /**
+   * Get current squad with league-specific stats and ratings
+   * @param {number} teamId - Team ID
+   * @param {number} season - Season year
+   * @param {number} leagueId - League ID (EPL, UCL, etc.)
+   * @returns {Promise<Array>} Squad with league-specific stats
+   */
+  async getSquadWithStats(teamId, season, leagueId) {
+    try {
+      // 1. Get CURRENT squad roster (excludes transferred out)
+      const squadEndpoint = `players/squads?team=${teamId}`;
+      const squadData = await this.request(squadEndpoint);
+      if (!squadData.response || squadData.response.length === 0) return [];
+      const currentSquad = squadData.response[0]?.players || [];
+      // DEBUG: Log the entire squad received from the API
+      console.log('==== DEBUG: Full current squad from API ====');
+      currentSquad.forEach(player => {
+        console.log(`ID: ${player.id}, Name: ${player.name}, Age: ${player.age}, Number: ${player.number}, Position: ${player.position}`);
+      });
+      console.log('==== END SQUAD ====');
+      const currentPlayerIds = new Set(currentSquad.map(p => Number(p.id)));
+
+      // 2. Get player stats for this team/season (bulk)
+      const statsEndpoint = `players?team=${teamId}&season=${season}`;
+      const statsData = await this.request(statsEndpoint);
+      // Map playerId => stats filtered by league
+      const statsMap = new Map();
+      (statsData.response || []).forEach(player => {
+        const playerId = Number(player.player.id);
+        // Only stats for the current league
+        const leagueStats = (player.statistics || []).find(stat => stat.league?.id === leagueId);
+        if (leagueStats && currentPlayerIds.has(playerId)) {
+          statsMap.set(playerId, leagueStats);
+        }
+      });
+
+      // Helper to sanitize player names for API search (alphanumeric and spaces only, remove accents)
+      function sanitizePlayerName(name) {
+        let sanitized = name.normalize('NFD').replace(/\p{Diacritic}/gu, '');
+        sanitized = sanitized.replace(/[^a-zA-Z0-9 ]/g, '');
+        sanitized = sanitized.replace(/ +/g, ' ').trim();
+        return sanitized;
+      }
+
+      // Helper to get surname (last word)
+      function getSurname(name) {
+        const parts = name.trim().split(' ');
+        return parts.length > 1 ? parts[parts.length - 1] : name;
+      }
+
+      // 3. For any squad player missing from statsMap, fetch individually using search
+      for (const squadPlayer of currentSquad) {
+        const playerId = Number(squadPlayer.id);
+        if (!statsMap.has(playerId)) {
+          // Use surname if >= 4 chars, else use full name
+          let surname = sanitizePlayerName(getSurname(squadPlayer.name));
+          let searchName;
+          if (surname.length >= 4) {
+            searchName = surname;
+          } else {
+            searchName = sanitizePlayerName(squadPlayer.name);
+          }
+          if (!searchName) continue;
+          const searchEndpoint = `players?team=${teamId}&search=${encodeURIComponent(searchName)}&season=${season}`;
+          const searchData = await this.request(searchEndpoint);
+          const found = (searchData.response || []).find(p => Number(p.player.id) === playerId);
+          if (found) {
+            const leagueStats = (found.statistics || []).find(stat => stat.league?.id === leagueId);
+            if (leagueStats) {
+              statsMap.set(playerId, leagueStats);
+            }
+          }
+        }
+      }
+
+      // 4. Merge squad with league-specific stats
+      const squadWithStats = currentSquad.map(squadPlayer => {
+        const stat = statsMap.get(Number(squadPlayer.id));
+        const appearances = stat?.games?.appearences ? Number(stat.games.appearences) : 0;
+        const lineups = stat?.games?.lineups ? Number(stat.games.lineups) : 0;
+        return {
+          id: squadPlayer.id,
+          name: squadPlayer.name,
+          photo: squadPlayer.photo,
+          age: squadPlayer.age,
+          number: squadPlayer.number,
+          position: squadPlayer.position,
+          rating: stat?.games?.rating ? Number(stat.games.rating) : 0,
+          appearances,
+          lineups,
+          goals: stat?.goals?.total || 0,
+          assists: stat?.goals?.assists || 0,
+          shots: stat?.shots?.total || 0,
+          shotsOn: stat?.shots?.on || 0,
+          passes: stat?.passes?.total || 0,
+          passAccuracy: stat?.passes?.accuracy || 0,
+          keyPasses: stat?.passes?.key || 0,
+          tackles: stat?.tackles?.total || 0,
+          interceptions: stat?.tackles?.interceptions || 0,
+          duelsWon: stat?.duels?.won || 0,
+          duelsTotal: stat?.duels?.total || 0,
+          saves: stat?.goals?.saves || 0,
+          conceded: stat?.goals?.conceded || 0,
+          cleanSheets: stat?.goals?.cleansheet || 0,
+          yellowCards: stat?.cards?.yellow || 0,
+          redCards: stat?.cards?.red || 0,
+          hasStats: !!stat
+        };
+      }).filter(p => p.lineups > 0 || p.appearances > 1);
+      return squadWithStats;
+    } catch (error) {
+      return [];
+    }
+  }
+
+  /**
+   * DEPRECATED: Use getSquadWithStats instead. This function is no longer used.
+   */
+  async getActivePlayersWithStats(teamId, season, leagueId) {
+    // Deprecated: Use getSquadWithStats for current squad only
+    return await this.getSquadWithStats(teamId, season, leagueId);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -356,81 +511,12 @@ class FootballAPIService {
     return data.response?.[0] || null;
   }
 
-  /**
-   * Get team squad with player stats and ratings
-   * @param {number} teamId - Team ID
-   * @param {number} season - Season year
-   * @returns {Promise<Array>} Squad with stats
-   */
-  async getSquadWithStats(teamId, season) {
-    try {
-      const endpoint = `players?team=${teamId}&season=${season}`;
-      const data = await this.request(endpoint);
-      
-      if (!data.response || data.response.length === 0) {
-        return [];
-      }
-
-      // Process and extract key player data
-      return data.response.map(player => {
-        const stats = player.statistics?.[0]; // Current season stats
-        
-        return {
-          id: player.player.id,
-          name: player.player.name,
-          photo: player.player.photo,
-          age: player.player.age,
-          number: player.player.number || null,
-          position: player.player.position || stats?.games?.position || 'Unknown',
-          
-          // Performance stats
-          rating: stats?.games?.rating ? parseFloat(stats.games.rating) : null,
-          appearances: stats?.games?.appearences || 0,
-          lineups: stats?.games?.lineups || 0,
-          minutes: stats?.games?.minutes || 0,
-          
-          // Attacking stats
-          goals: stats?.goals?.total || 0,
-          assists: stats?.goals?.assists || 0,
-          shots: stats?.shots?.total || 0,
-          shotsOn: stats?.shots?.on || 0,
-          
-          // Passing stats
-          passes: stats?.passes?.total || 0,
-          passAccuracy: stats?.passes?.accuracy || 0,
-          keyPasses: stats?.passes?.key || 0,
-          
-          // Defensive stats
-          tackles: stats?.tackles?.total || 0,
-          interceptions: stats?.tackles?.interceptions || 0,
-          duelsWon: stats?.duels?.won || 0,
-          duelsTotal: stats?.duels?.total || 0,
-          
-          // Goalkeeper stats (if applicable)
-          saves: stats?.goals?.saves || 0,
-          conceded: stats?.goals?.conceded || 0,
-          cleanSheets: stats?.goals?.cleansheet || 0,
-          
-          // Discipline
-          yellowCards: stats?.cards?.yellow || 0,
-          redCards: stats?.cards?.red || 0
-        };
-      }).sort((a, b) => (b.rating || 0) - (a.rating || 0)); // Sort by rating
-      
-    } catch (error) {
-      console.error(`   ⚠️  Error fetching squad stats: ${error.message}`);
-      return [];
-    }
-  }
-
   // ═══════════════════════════════════════════════════════════════
   // COMPREHENSIVE MATCH DATA FETCHER
   // ═══════════════════════════════════════════════════════════════
 
   /**
-   * Fetch all relevant data for a match prediction
-   * @param {Object} fixture - Fixture object
-   * @returns {Promise<Object>} Comprehensive match data
+   * Fetch comprehensive match data, including last starting 11 for both teams
    */
   async getComprehensiveMatchData(fixture) {
     const homeTeamId = fixture.teams.home.id;
@@ -467,8 +553,14 @@ class FootballAPIService {
         this.getAPIPrediction(fixtureId),
         this.getTopScorers(leagueId, season),
         this.getTopAssists(leagueId, season),
-        this.getSquadWithStats(homeTeamId, season),
-        this.getSquadWithStats(awayTeamId, season)
+        this.getSquadWithStats(homeTeamId, season, leagueId),
+        this.getSquadWithStats(awayTeamId, season, leagueId)
+      ]);
+
+      // Fetch last starting 11 for both teams
+      const [homeLastXI, awayLastXI] = await Promise.all([
+        this.getLastStarting11(homeTeamId, season),
+        this.getLastStarting11(awayTeamId, season)
       ]);
 
       // Process and structure the data
@@ -504,6 +596,12 @@ class FootballAPIService {
         // Squad Stats & Ratings (for detailed player analysis)
         homeSquad: homeSquad || [],
         awaySquad: awaySquad || [],
+
+        // Add last starting 11 for both teams
+        lastLineup: {
+          homePlayers: homeLastXI,
+          awayPlayers: awayLastXI
+        },
 
         // Metadata
         fetchedAt: new Date().toISOString(),

@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════════════════════
  * AI ANALYSIS SERVICE
  * ═══════════════════════════════════════════════════════════════
- * Professional-grade AI-powered match analysis using Claude
+ * Professional-grade AI-powered match analysis using GPT-4.1
  * - Structured prompts for consistent output
  * - Comprehensive data integration
  * - Validation and error handling
@@ -31,21 +31,14 @@ class AIAnalysisService {
     try {
       console.log(`   🤖 Generating AI prediction...`);
       console.log(`   📝 Building comprehensive prompt...`);
-      
       const prompt = this._buildPredictionPrompt(fixture, matchData, leagueStats);
-      
       console.log(`   📊 Prompt size: ${prompt.length} characters`);
       console.log(`   ⏳ Requesting AI analysis (may take 30-60 seconds)...`);
-      
       const response = await this._callClaudeAPI(prompt);
-      
-      // Validate response
       if (!this._validatePrediction(response)) {
         throw new Error('AI prediction validation failed');
       }
-
       this.analysisCount++;
-      
       return {
         analysis: response,
         metadata: {
@@ -54,7 +47,6 @@ class AIAnalysisService {
           dataQuality: this._assessDataQuality(matchData)
         }
       };
-
     } catch (error) {
       console.error(`   ❌ AI prediction error: ${error.message}`);
       throw error;
@@ -137,32 +129,30 @@ REQUIRED SECTIONS:
 **3. KEY PLAYERS & INJURIES** ⚠️ CRITICAL
 ⚠️⚠️⚠️ TRANSFER WINDOW WARNING ⚠️⚠️⚠️
 
-DO NOT use the "Season Top Scorers" section to determine who is available!
-That data may include players who have TRANSFERRED to other clubs!
+The "Season Top Scorers" section ONLY shows players in the CURRENT squad.
+Players who have transferred OUT are already excluded.
 
-Use THIS priority order ONLY:
-1. RECENT FORM → "Players Recently Used (Last 3 Games)" list
-2. INJURIES → Who is confirmed OUT
-3. Generic terms if uncertain (e.g., "their attacking options")
+Use THIS priority order:
+1. SQUAD ANALYSIS → Current squad with ratings (all positions)
+2. TOP SCORERS → Current squad's goal scorers only
+3. INJURIES → Who is confirmed OUT
 
 HOME TEAM:
-- Available: ONLY list players from "Players Recently Used" list
+- Available: Use Squad Analysis section (current players only)
 - Injuries/Out: EVERY player from injuries section + impact
-- DO NOT name specific players from "Season Top Scorers" unless they're in recent lineup
 
 AWAY TEAM:
-- Available: ONLY list players from "Players Recently Used" list  
+- Available: Use Squad Analysis section (current players only)
 - Injuries/Out: EVERY player from injuries section + impact
-- DO NOT name specific players from "Season Top Scorers" unless they're in recent lineup
 
 Example CORRECT approach:
-"Bournemouth will rely on Evanilson and Cook (recently featured) in attack"
+"Bournemouth's attack features Evanilson (8.2 rating, 12 goals) and Cook"
 
 Example WRONG approach:
-"Bournemouth will rely on Semenyo (10 goals)" ← Player may have transferred!
+"Bournemouth will rely on Semenyo" ← API data now shows current squad only
 
-If you're uncertain about specific players, use team statistics:
-"Bournemouth averages 1.5 goals/game" instead of naming individuals.
+🎯 HIGHLIGHT ATTACKERS: When discussing goal threats, emphasize top-rated attackers
+Example: "⚡ Arsenal's attacking threat comes from Victor Gyokeres (8.5 rating, 15 goals)"
 
 **4. RECENT FORM**
 - Last 5 results with scores
@@ -402,73 +392,81 @@ Win Probability (from API):
   }
 
   _buildTopPlayersSection(matchData) {
-    const formatPlayers = (players, stat = 'goals') => {
+    // Use current season squad data only - this ensures transferred players don't show
+    const getCurrentSquadNames = (squad) =>
+      squad?.map(p => p.name).filter(Boolean) || [];
+    
+    const formatPlayers = (players, stat = 'goals', currentSquadNames = []) => {
       if (!players || players.length === 0) return '  No data available';
-      return players.slice(0, 3).map(p => {
-        const stats = p.statistics?.[0];
-        const value = stat === 'goals' ? stats?.goals?.total : stats?.goals?.assists;
-        return `  • ${p.player?.name || 'Unknown'} (${value || 0} ${stat})`;
-      }).join('\n');
+      // Only show players who are in the CURRENT squad for this team
+      return players
+        .filter(p => currentSquadNames.includes(p.player?.name))
+        .slice(0, 3)
+        .map(p => {
+          const stats = p.statistics?.[0];
+          const value = stat === 'goals' ? stats?.goals?.total : stats?.goals?.assists;
+          return `  • ${p.player?.name || 'Unknown'} (${value || 0} ${stat})`;
+        }).join('\n') || '  No active scorers in current squad';
     };
-
+    
+    const homeSquadNames = getCurrentSquadNames(matchData.homeSquad);
+    const awaySquadNames = getCurrentSquadNames(matchData.awaySquad);
+    
     return `
 ═══════════════════════════════════════════════════════════════
-SEASON TOP SCORERS (⚠️ WARNING - MAY INCLUDE TRANSFERRED PLAYERS)
+SEASON TOP SCORERS (CURRENT SQUAD ONLY)
 ═══════════════════════════════════════════════════════════════
-⚠️⚠️⚠️ CRITICAL WARNING - READ CAREFULLY ⚠️⚠️⚠️
+⚠️ Only showing players currently in the squad (transfers excluded)
 
-This section shows SEASON STATISTICS ONLY - it aggregates ALL matches from
-August to now, including players who may have TRANSFERRED TO OTHER CLUBS!
+HOME TEAM - Top Scorers:
+${formatPlayers(matchData.topScorers?.home || [], 'goals', homeSquadNames)}
 
-DO NOT USE THIS DATA TO DETERMINE WHO IS AVAILABLE FOR THIS MATCH!
-
-Instead, determine available players from:
-1. Recent Form section → "Players Recently Used (Last 3 Games)" 
-2. Injuries section → Lists who is definitely OUT
-3. If uncertain, use generic terms like "their attacking options"
-
-HOME TEAM - Season Top Scorers (MAY INCLUDE TRANSFERRED PLAYERS):
-${formatPlayers(matchData.topScorers?.home || [], 'goals')}
-
-AWAY TEAM - Season Top Scorers (MAY INCLUDE TRANSFERRED PLAYERS):
-${formatPlayers(matchData.topScorers?.away || [], 'goals')}
-
-⚠️⚠️⚠️ DO NOT MENTION THESE PLAYERS AS "AVAILABLE" ⚠️⚠️⚠️
-
-Only mention specific players if you can verify they appeared in the 
-"Players Recently Used" list OR are mentioned in injuries/suspensions.
-
-If you want to reference attacking threat, use the team's overall 
-statistics (goals/game average) rather than naming specific players
-who may no longer be at the club.`;
+AWAY TEAM - Top Scorers:
+${formatPlayers(matchData.topScorers?.away || [], 'goals', awaySquadNames)}
+`;
   }
 
   _buildSquadAnalysisSection(matchData) {
     const formatSquad = (squad, teamName) => {
       if (!squad || squad.length === 0) return '  No squad data available';
       
-      // Group by position
-      const goalkeepers = squad.filter(p => p.position === 'Goalkeeper');
-      const defenders = squad.filter(p => p.position === 'Defender');
-      const midfielders = squad.filter(p => p.position === 'Midfielder');
-      const attackers = squad.filter(p => p.position === 'Attacker');
+      // Group by position - using CURRENT squad data only
+      const goalkeepers = squad.filter(p => p.position === 'Goalkeeper').sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      const defenders = squad.filter(p => p.position === 'Defender').sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      const midfielders = squad.filter(p => p.position === 'Midfielder').sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      const attackers = squad.filter(p => p.position === 'Attacker').sort((a, b) => (b.rating || 0) - (a.rating || 0));
       
       const formatPlayer = (p) => {
-        const rating = p.rating ? p.rating.toFixed(2) : 'N/A';
+        // Defensive: ensure rating is a number or can be converted to one
+        let rating = 'N/A';
+        if (typeof p.rating === 'number' && !isNaN(p.rating)) {
+          rating = p.rating.toFixed(2);
+        } else if (typeof p.rating === 'string' && !isNaN(parseFloat(p.rating))) {
+          rating = parseFloat(p.rating).toFixed(2);
+        }
         const apps = p.appearances || 0;
         const goals = p.goals || 0;
         const assists = p.assists || 0;
         const minutes = p.minutes || 0;
+        const hasStats = p.hasStats !== false && (apps > 0 || p.rating);
         
         let summary = `${p.name} (Rating: ${rating}, Apps: ${apps})`;
+        
         if (p.position === 'Goalkeeper' && p.saves) {
           summary += ` - ${p.saves} saves, ${p.cleanSheets || 0} clean sheets`;
         } else if (goals > 0 || assists > 0) {
           summary += ` - ${goals}G, ${assists}A`;
         }
+        
         if (p.tackles > 0 || p.interceptions > 0) {
           summary += ` [${p.tackles}T, ${p.interceptions}I]`;
         }
+        
+        // Note for recent transfers
+        if (!hasStats) {
+          summary += ` [RECENT TRANSFER - No stats yet]`;
+        }
+        
         return summary;
       };
       
@@ -496,36 +494,27 @@ who may no longer be at the club.`;
       }
       
       if (attackers.length > 0) {
-        output += '\n  ATTACKERS (Top 3 by rating):\n';
-        attackers.slice(0, 3).forEach(p => {
-          output += `    • ${formatPlayer(p)}\n`;
+        output += '\n  🎯 ATTACKERS (Top 5 by rating) - KEY GOAL THREATS:\n';
+        attackers.slice(0, 5).forEach(p => {
+          output += `    ⚡ ${formatPlayer(p)}\n`;
         });
       }
       
       return output;
     };
-
+    
     return `
 ═══════════════════════════════════════════════════════════════
-SQUAD ANALYSIS - PLAYER RATINGS & PERFORMANCE
+SQUAD ANALYSIS - PLAYER RATINGS & PERFORMANCE (CURRENT SQUAD)
 ═══════════════════════════════════════════════════════════════
-⚠️ Use this data to identify HIGH-PERFORMING players in ALL positions!
-Include goalkeepers and defenders in your analysis, not just attackers.
-
-Rating Scale: 6.0-6.5 (Below avg), 6.5-7.0 (Average), 7.0-7.5 (Good), 7.5+ (Excellent)
+⚠️ Only showing current squad members (no transferred players)
 
 HOME TEAM SQUAD:
 ${formatSquad(matchData.homeSquad, 'Home')}
 
 AWAY TEAM SQUAD:
 ${formatSquad(matchData.awaySquad, 'Away')}
-
-ANALYSIS GUIDELINES:
-1. Identify players with ratings 7.5+ as key threats/strengths
-2. Consider defensive ratings when predicting clean sheets
-3. Goalkeeper performance affects both teams' scoring chances
-4. High-rated defenders reduce opponent's attacking effectiveness
-5. Use this data in your tactical analysis section`;
+`;
   }
 
   _buildLeagueStatsSection(leagueStats) {
@@ -556,7 +545,7 @@ Average Statistics:
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // CLAUDE API INTEGRATION
+  // CLAUDE API INTEGRATION (Anthropic)
   // ═══════════════════════════════════════════════════════════════
 
   /**
@@ -566,10 +555,8 @@ Average Statistics:
   async _callClaudeAPI(prompt, retryCount = 0) {
     const maxRetries = 3;
     const timeout = API_CONFIG.anthropic.timeout;
-    
     try {
       console.log(`   🤖 Calling Claude API (attempt ${retryCount + 1}/${maxRetries + 1})...`);
-      
       const response = await axios.post(
         API_CONFIG.anthropic.baseUrl,
         {
@@ -586,24 +573,18 @@ Average Statistics:
           timeout: timeout
         }
       );
-
       const text = response.data.content
         .filter(item => item.type === 'text')
         .map(item => item.text)
         .join('\n');
-
       console.log(`   ✅ Received response (${text.length} characters)`);
       return text;
-
     } catch (error) {
       const isTimeout = error.code === 'ECONNABORTED' || error.message.includes('timeout');
       const isRateLimit = error.response?.status === 429;
       const isServerError = error.response?.status >= 500;
-      
-      // Retry on timeout, rate limit, or server errors
       if (retryCount < maxRetries && (isTimeout || isRateLimit || isServerError)) {
         const delay = 10000 * Math.pow(2, retryCount); // 10s, 20s, 40s
-        
         if (isTimeout) {
           console.log(`   ⏱️  Timeout (${timeout/1000}s). Retrying in ${delay/1000}s... (${retryCount + 1}/${maxRetries})`);
         } else if (isRateLimit) {
@@ -611,12 +592,9 @@ Average Statistics:
         } else if (isServerError) {
           console.log(`   ⚠️  Server error ${error.response.status}. Retrying in ${delay/1000}s... (${retryCount + 1}/${maxRetries})`);
         }
-        
         await this._delay(delay);
         return this._callClaudeAPI(prompt, retryCount + 1);
       }
-
-      // Format error message
       let errorMsg = 'Claude API error: ';
       if (isTimeout) {
         errorMsg += `timeout of ${timeout/1000}s exceeded`;
@@ -625,7 +603,6 @@ Average Statistics:
       } else {
         errorMsg += error.message;
       }
-      
       throw new Error(errorMsg);
     }
   }

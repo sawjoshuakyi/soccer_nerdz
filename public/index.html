@@ -75,15 +75,13 @@
             overflow-x: auto;
             padding-bottom: 0.5rem;
             -webkit-overflow-scrolling: touch;
+            overflow-y: hidden;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
         }
 
         .league-tabs::-webkit-scrollbar {
-            height: 4px;
-        }
-
-        .league-tabs::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 2px;
+            display: none; /* Chrome, Safari, Opera */
         }
 
         .league-tab {
@@ -108,6 +106,59 @@
             background: var(--primary);
             color: var(--dark);
             box-shadow: var(--green-glow);
+        }
+
+        .refresh-btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #059669, #10b981);
+            border: 1px solid var(--primary);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            white-space: nowrap;
+            font-weight: 600;
+            transition: all 0.3s;
+            flex-shrink: 0;
+            color: var(--dark);
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+            text-decoration: none;
+            outline: none;
+            will-change: transform;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+            background: linear-gradient(135deg, #10b981, #34d399);
+            border: 1px solid var(--primary);
+            text-decoration: none;
+        }
+        
+        .refresh-btn:focus {
+            outline: none;
+            text-decoration: none;
+        }
+
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+
+        .refresh-btn.refreshing {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .refresh-btn.refreshing::before {
+            content: '🔄';
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         /* Fixtures Grid */
@@ -566,7 +617,7 @@
         }
 
         .tab-btn:hover {
-            background: var(--dark-card);
+            background: var (--dark-card);
             border-color: var(--primary);
         }
 
@@ -666,6 +717,63 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
+        /* FIFA-style Player Card */
+        .fifa-player-card {
+            background: var(--dark-lighter);
+            border: 1px solid var(--dark-lighter);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .fifa-player-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+
+        .fifa-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .fifa-rating {
+            font-size: 1.5rem;
+            font-weight: 900;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        .fifa-position {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #9ca3af;
+        }
+
+        .fifa-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .fifa-player-name {
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        .fifa-player-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--white);
+        }
     </style>
 </head>
 <body>
@@ -683,6 +791,9 @@
             <button class="league-tab" data-league="ligue1">Ligue 1</button>
             <button class="league-tab" data-league="ucl">Champions League</button>
             <button class="league-tab" data-league="europa">Europa League</button>
+            <button class="refresh-btn" onclick="refreshCurrentLeague()" title="Refresh fixtures and predictions">
+                🔄 Refresh
+            </button>
         </div>
 
         <div class="fixtures-grid" id="fixturesGrid">
@@ -776,6 +887,44 @@
             } catch (error) {
                 console.error('Error loading fixtures:', error);
                 grid.innerHTML = '<div class="loading"><p>Error loading fixtures</p></div>';
+            }
+        }
+
+        // Refresh current league fixtures
+        async function refreshCurrentLeague() {
+            const refreshBtn = document.querySelector('.refresh-btn');
+            
+            // Add refreshing state
+            refreshBtn.classList.add('refreshing');
+            refreshBtn.innerHTML = '🔄 Refreshing...';
+            refreshBtn.disabled = true;
+
+            try {
+                // Reload fixtures for current league
+                await loadFixtures(currentLeague);
+                
+                // Show success feedback
+                refreshBtn.innerHTML = '✅ Refreshed!';
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    refreshBtn.classList.remove('refreshing');
+                    refreshBtn.innerHTML = '🔄 Refresh';
+                    refreshBtn.disabled = false;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error refreshing:', error);
+                
+                // Show error feedback
+                refreshBtn.innerHTML = '❌ Error';
+                refreshBtn.classList.remove('refreshing');
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    refreshBtn.innerHTML = '🔄 Refresh';
+                    refreshBtn.disabled = false;
+                }, 2000);
             }
         }
 
@@ -1089,7 +1238,7 @@
                                 <span class="percentage-label left">${homeGoalsFor + awayGoalsFor > 0 ? Math.round((homeGoalsFor/(homeGoalsFor+awayGoalsFor))*100) : 50}%</span>
                                 <div class="bar-container">
                                     <div class="bar-fill home" style="width: ${homeGoalsFor + awayGoalsFor > 0 ? (homeGoalsFor/(homeGoalsFor+awayGoalsFor)*100) : 50}%"></div>
-                                    <div class="bar-fill away" style="width: ${awayGoalsFor + awayGoalsFor > 0 ? (awayGoalsFor/(homeGoalsFor+awayGoalsFor)*100) : 50}%"></div>
+                                    <div class="bar-fill away" style="width: ${homeGoalsFor + awayGoalsFor > 0 ? (awayGoalsFor/(homeGoalsFor+awayGoalsFor)*100) : 50}%"></div>
                                 </div>
                                 <span class="percentage-label right">${homeGoalsFor + awayGoalsFor > 0 ? Math.round((awayGoalsFor/(homeGoalsFor+awayGoalsFor))*100) : 50}%</span>
                             </div>
@@ -1114,6 +1263,10 @@
 
             // Create Radar Chart with 8 metrics like demo
             const radarCtx = document.getElementById('radarChart').getContext('2d');
+            
+            // Helper function to cap values at 100 to prevent chart overflow
+            const cap = (val) => Math.min(Math.max(val, 0), 100);
+            
             new Chart(radarCtx, {
                 type: 'radar',
                 data: {
@@ -1121,14 +1274,14 @@
                     datasets: [{
                         label: homeTeam,
                         data: [
-                            homeStrength,
-                            homeGoalsFor * 10,
-                            homeDefensive,
-                            homeWins * 20,
-                            homeAttacking,
-                            Math.max(100 - homeGoalsAgainst * 10, 0),
-                            homeDraws * 20,
-                            Math.max(100 - homeLosses * 20, 0)
+                            cap(homeStrength),
+                            cap(homeGoalsFor * 10),
+                            cap(homeDefensive),
+                            cap(homeWins * 20),
+                            cap(homeAttacking),
+                            cap(100 - homeGoalsAgainst * 10),
+                            cap(homeDraws * 20),
+                            cap(100 - homeLosses * 20)
                         ],
                         backgroundColor: 'rgba(59, 130, 246, 0.25)',
                         borderColor: 'rgba(59, 130, 246, 1)',
@@ -1138,14 +1291,14 @@
                     }, {
                         label: awayTeam,
                         data: [
-                            awayStrength,
-                            awayGoalsFor * 10,
-                            awayDefensive,
-                            awayWins * 20,
-                            awayAttacking,
-                            Math.max(100 - awayGoalsAgainst * 10, 0),
-                            awayDraws * 20,
-                            Math.max(100 - awayLosses * 20, 0)
+                            cap(awayStrength),
+                            cap(awayGoalsFor * 10),
+                            cap(awayDefensive),
+                            cap(awayWins * 20),
+                            cap(awayAttacking),
+                            cap(100 - awayGoalsAgainst * 10),
+                            cap(awayDraws * 20),
+                            cap(100 - awayLosses * 20)
                         ],
                         backgroundColor: 'rgba(16, 185, 129, 0.25)',
                         borderColor: 'rgba(16, 185, 129, 1)',
@@ -1269,28 +1422,49 @@
             
             grid.innerHTML = '';
 
-            const topPlayers = squad.slice(0, 11); // Top 11 by rating
+            // Try to get starting 11 from last game using provided endpoint logic
+            let starters = squad.slice(0, 11); // fallback
+            if (window.currentFixture && window.currentFixture.lastLineup && window.currentFixture.lastLineup[gridId]) {
+                // Use last league game lineup if available (array of player names)
+                const lastNames = window.currentFixture.lastLineup[gridId];
+                const filtered = squad.filter(p => lastNames.includes(p.name));
+                if (filtered.length === 11) starters = filtered;
+            }
+            if (starters.length !== 11) starters = squad.slice(0, 11);
 
-            topPlayers.forEach(player => {
+            starters.forEach(player => {
                 const card = document.createElement('div');
-                card.className = 'player-card';
-
+                card.className = 'fifa-player-card';
+                // Show stats: rating, shots/game, pass accuracy, duels won, chances created, pace, goals, assists
                 const rating = player.rating || 0;
+                const shotsPerGame = player.shots && player.appearances ? (player.shots / player.appearances).toFixed(2) : 'N/A';
+                const passAccuracy = player.passAccuracy ? player.passAccuracy + '%' : 'N/A';
+                const duelsWon = player.duelsWon || 0;
+                const chancesCreated = player.keyPasses || 0;
+                const pace = player.pace || 'N/A';
                 let ratingClass = 'rating-average';
                 if (rating >= 7.5) ratingClass = 'rating-excellent';
                 else if (rating >= 7.0) ratingClass = 'rating-good';
-
+                const playerName = `<strong>${player.name}</strong>`;
+                // Player photo (smaller, styled)
+                const playerPhoto = player.photo ? `<img src="${player.photo}" alt="${player.name}" class="fifa-player-photo" style="width:54px;height:54px;border-radius:8px;margin-bottom:6px;object-fit:cover;box-shadow:0 2px 8px #0002;">` : '';
                 card.innerHTML = `
-                    <div class="player-info">
-                        <div class="player-name">${player.name}</div>
-                        <div class="player-position">${player.position}</div>
-                        <div class="player-stats">
-                            ${player.goals || 0}G ${player.assists || 0}A • ${player.appearances || 0} apps
+                    <div class=\"fifa-card-header\">${playerPhoto}
+                        <span class=\"fifa-rating ${ratingClass}\">${rating > 0 ? rating.toFixed(1) : 'N/A'}</span>
+                        <span class=\"fifa-position\">${player.position}</span>
+                    </div>
+                    <div class=\"fifa-card-body\">
+                        <div class=\"fifa-player-name\">${playerName}</div>
+                        <div class=\"fifa-player-stats\" style=\"display:grid;grid-template-columns:repeat(2,1fr);gap:4px;\">
+                            <div><b>Shots/Game:</b> ${shotsPerGame}</div>
+                            <div><b>Pass Acc:</b> ${passAccuracy}</div>
+                            <div><b>Duels Won:</b> ${duelsWon}</div>
+                            <div><b>Chances Created:</b> ${chancesCreated}</div>
+                            <div><b>Pace:</b> ${pace}</div>
+                            <div><b>Goals:</b> ${player.goals || 0} <b>Assists:</b> ${player.assists || 0}</div>
                         </div>
                     </div>
-                    <span class="rating-badge ${ratingClass}">${rating > 0 ? rating.toFixed(1) : 'N/A'}</span>
                 `;
-
                 grid.appendChild(card);
             });
         }

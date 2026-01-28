@@ -53,7 +53,8 @@ app.use((req, res, next) => {
  */
 app.get('/api/fixtures/:league', async (req, res) => {
   const { league } = req.params;
-  const limit = parseInt(req.query.limit) || 10;
+  // If no limit is provided, return all fixtures
+  const limit = req.query.limit ? parseInt(req.query.limit) : undefined;
 
   if (!LEAGUES[league]) {
     return res.status(400).json({ 

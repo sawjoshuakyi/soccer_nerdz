@@ -30,6 +30,14 @@ const API_CONFIG = {
     maxTokens: 8000,
     version: '2023-06-01',
     timeout: 90000 // 90 seconds (comprehensive analysis takes time)
+  },
+  openai: {
+    baseUrl: 'https://api.openai.com/v1/chat/completions',
+    key: process.env.OPENAI_API_KEY,
+    model: 'gpt-4-1106-preview', // GPT-4.1 model name
+    maxTokens: 4096,
+    temperature: 0.7,
+    timeout: 90000 // 90 seconds
   }
 };
 
@@ -64,7 +72,7 @@ const LEAGUES = {
     name: 'Premier League',
     country: 'England',
     season: CURRENT_SEASON,
-    emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿'
+    emoji: '🏴󠁧󠁢󠁥󠁮󠁿'
   },
   bundesliga: {
     id: 78,

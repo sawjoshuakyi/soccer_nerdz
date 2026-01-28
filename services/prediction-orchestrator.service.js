@@ -210,6 +210,10 @@ class PredictionOrchestrator {
           home: matchData.homeSquad || [],
           away: matchData.awaySquad || []
         },
+        lastLineup: {
+          home: matchData.lastLineup?.homePlayers || [],
+          away: matchData.lastLineup?.awayPlayers || []
+        },
         generatedAt: new Date().toISOString()
       };
 
@@ -257,7 +261,7 @@ class PredictionOrchestrator {
    * @param {number} limit - Maximum number of fixtures
    * @returns {Promise<Array>} Fixtures (raw API format for frontend compatibility)
    */
-  async getUpcomingFixtures(leagueKey, limit = 10) {
+  async getUpcomingFixtures(leagueKey, limit) {
     const leagueConfig = LEAGUES[leagueKey];
     if (!leagueConfig) {
       throw new Error(`Invalid league: ${leagueKey}`);
@@ -269,7 +273,8 @@ class PredictionOrchestrator {
       FETCH_CONFIG.daysAhead
     );
 
-    // Return raw fixtures in API format (frontend expects this structure)
+    // If limit is undefined, return all fixtures
+    if (typeof limit === 'undefined') return fixtures;
     return fixtures.slice(0, limit);
   }
 
