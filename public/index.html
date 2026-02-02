@@ -20,6 +20,16 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
         :root {
             /* Professional White & Black Theme - Light Mode */
             --bg-primary: #ffffff;
@@ -214,6 +224,40 @@
             display: block;
         }
 
+        /* Sidebar Header Actions */
+        .sidebar-header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .sidebar-close-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: var(--bg-accent);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .sidebar-close-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--text-muted);
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar-close-btn {
+                display: flex;
+            }
+        }
+
         /* League Navigation */
         .league-nav {
             padding: var(--spacing-md);
@@ -234,7 +278,7 @@
             align-items: center;
             gap: var(--spacing-sm);
             width: 100%;
-            padding: var(--spacing-sm) var(--spacing-md);
+            padding: var(--spacing-md);
             background: transparent;
             border: none;
             border-radius: var(--radius-sm);
@@ -244,6 +288,7 @@
             cursor: pointer;
             transition: all 0.15s ease;
             text-align: left;
+            min-height: 44px; /* Touch-friendly target */
         }
 
         .league-btn:hover {
@@ -268,6 +313,8 @@
             flex: 1;
             overflow-y: auto;
             padding: var(--spacing-md);
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            overscroll-behavior: contain;
         }
 
         .fixtures-header {
@@ -304,11 +351,16 @@
             margin-bottom: var(--spacing-sm);
             cursor: pointer;
             transition: all 0.15s ease;
+            min-height: 60px; /* Touch-friendly */
         }
 
         .fixture-card:hover {
             background: var(--bg-card-hover);
             border-color: var(--text-muted);
+        }
+
+        .fixture-card:active {
+            transform: scale(0.98);
         }
 
         .fixture-card.active {
@@ -398,6 +450,7 @@
             padding: var(--spacing-xl);
             background: var(--bg-primary);
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* Empty State */
@@ -498,16 +551,6 @@
             letter-spacing: 0.1em;
         }
 
-        .match-predicted-score {
-            background: var(--text-primary);
-            color: var(--bg-primary);
-            padding: var(--spacing-sm) var(--spacing-lg);
-            border-radius: var(--radius-md);
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
         .prediction-summary {
             display: flex;
             flex-direction: column;
@@ -523,12 +566,6 @@
 
         .prediction-summary-text strong {
             color: var(--text-primary);
-        }
-
-        .prediction-summary-note {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            font-style: italic;
         }
 
         /* KPI Grid */
@@ -720,7 +757,8 @@
         }
 
         .scoreline-item:first-child .scoreline-prob {
-            color: rgba(255,255,255,0.85);
+            color: var(--bg-primary);
+            opacity: 0.7;
         }
 
         .scoreline-item:hover {
@@ -1994,7 +2032,8 @@
                 top: 0;
                 z-index: 1000;
                 transition: left 0.3s ease;
-                width: 340px;
+                width: min(340px, 85vw);
+                max-width: 340px;
             }
 
             .sidebar.open {
@@ -2015,6 +2054,11 @@
             .dash-card.span-6 {
                 grid-column: span 12;
             }
+
+            /* Dashboard grid on tablet */
+            .dashboard-grid {
+                gap: var(--spacing-md);
+            }
         }
 
         @media (max-width: 768px) {
@@ -2026,13 +2070,277 @@
                 grid-template-columns: repeat(2, 1fr);
             }
 
+            /* Keep teams horizontal on mobile, just smaller */
             .match-teams-header {
-                flex-direction: column;
-                gap: var(--spacing-lg);
+                flex-direction: row;
+                gap: var(--spacing-sm);
+                padding: 0 var(--spacing-xs);
+            }
+
+            .match-team {
+                max-width: 100px;
+                gap: var(--spacing-xs);
+            }
+
+            .match-team-logo {
+                width: 48px;
+                height: 48px;
+            }
+
+            .match-team-name {
+                font-size: 0.75rem;
+                line-height: 1.2;
+            }
+
+            .match-vs {
+                gap: 2px;
+                min-width: 60px;
+            }
+
+            .match-vs-text {
+                font-size: 0.7rem;
+            }
+
+            .prediction-summary {
+                gap: 2px;
+            }
+
+            .prediction-summary-text {
+                font-size: 0.65rem;
             }
 
             .xg-comparison {
+                flex-direction: row;
+                gap: var(--spacing-sm);
+            }
+
+            .xg-team {
+                padding: var(--spacing-sm);
+            }
+
+            .xg-team-label {
+                font-size: 0.55rem;
+            }
+
+            .xg-team-value {
+                font-size: 1.25rem;
+            }
+
+            .xg-delta {
+                padding: var(--spacing-xs);
+            }
+
+            .xg-delta-label {
+                font-size: 0.5rem;
+            }
+
+            .xg-delta-value {
+                font-size: 0.85rem;
+            }
+
+            /* KPI cards mobile */
+            .kpi-card {
+                padding: var(--spacing-md);
+            }
+
+            .kpi-value {
+                font-size: 1.5rem;
+            }
+
+            .kpi-label {
+                font-size: 0.65rem;
+            }
+
+            /* Match header card mobile */
+            .match-header-card {
+                padding: var(--spacing-md);
+            }
+
+            .match-meta {
                 flex-direction: column;
+                gap: var(--spacing-xs);
+            }
+
+            .match-meta-item {
+                font-size: 0.7rem;
+            }
+
+            /* Cards mobile */
+            .dash-card {
+                padding: var(--spacing-md);
+            }
+
+            .dash-card-header {
+                margin-bottom: var(--spacing-sm);
+            }
+
+            .dash-card-title {
+                font-size: 0.8rem;
+            }
+
+            /* Methodology section mobile */
+            .methodology-formula {
+                padding: var(--spacing-sm);
+                font-size: 0.7rem;
+            }
+
+            .methodology-step {
+                padding: var(--spacing-sm);
+            }
+
+            .methodology-step h4 {
+                font-size: 0.75rem;
+            }
+
+            .methodology-step p,
+            .methodology-step ul {
+                font-size: 0.7rem;
+            }
+
+            /* Scoreline grid mobile */
+            .scoreline-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: var(--spacing-xs);
+            }
+
+            .scoreline-cell {
+                padding: var(--spacing-xs);
+                font-size: 0.65rem;
+            }
+
+            /* Analysis section mobile */
+            .analysis-content {
+                font-size: 0.8rem;
+                line-height: 1.5;
+            }
+
+            .analysis-section {
+                margin-bottom: var(--spacing-lg);
+                padding-bottom: var(--spacing-md);
+            }
+
+            .analysis-section-title {
+                font-size: 0.8rem;
+            }
+
+            /* Dash card mobile */
+            .dash-card-header {
+                padding: var(--spacing-sm) var(--spacing-md);
+            }
+
+            .dash-card-body {
+                padding: var(--spacing-md);
+            }
+
+            /* Odds comparison mobile */
+            .odds-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .odds-table th,
+            .odds-table td {
+                padding: var(--spacing-xs) var(--spacing-sm);
+                font-size: 0.7rem;
+            }
+
+            .odds-table th {
+                font-size: 0.6rem;
+            }
+
+            .odds-bookmaker {
+                font-size: 0.7rem;
+            }
+
+            .odds-bookmaker-logo {
+                width: 16px;
+                height: 16px;
+                font-size: 0.5rem;
+            }
+
+            /* Tab navigation mobile */
+            .tab-nav {
+                flex-wrap: wrap;
+                gap: var(--spacing-xs);
+            }
+
+            .tab-btn {
+                font-size: 0.7rem;
+                padding: var(--spacing-xs) var(--spacing-sm);
+                flex: 1 1 auto;
+                min-width: 80px;
+                text-align: center;
+            }
+        }
+
+        /* Extra small screens (phones in portrait) */
+        @media (max-width: 480px) {
+            .match-teams-header {
+                gap: var(--spacing-xs);
+            }
+
+            .match-team {
+                max-width: 80px;
+            }
+
+            .match-team-logo {
+                width: 40px;
+                height: 40px;
+            }
+
+            .match-team-name {
+                font-size: 0.65rem;
+            }
+
+            .match-vs {
+                min-width: 50px;
+            }
+
+            /* xG section extra small */
+            .xg-team {
+                padding: var(--spacing-xs);
+            }
+
+            .xg-team-label {
+                font-size: 0.5rem;
+                margin-bottom: 2px;
+            }
+
+            .xg-team-value {
+                font-size: 1rem;
+            }
+
+            .xg-delta {
+                display: none;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: var(--spacing-xs);
+            }
+
+            .kpi-card {
+                padding: var(--spacing-sm);
+            }
+
+            .kpi-value {
+                font-size: 1.25rem;
+            }
+
+            .kpi-label {
+                font-size: 0.6rem;
+            }
+
+            .scoreline-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            /* Sidebar fixture cards */
+            .fixture-card {
+                padding: var(--spacing-sm);
+            }
+
+            .fixture-teams {
+                font-size: 0.75rem;
             }
         }
 
@@ -2041,16 +2349,43 @@
             display: none;
             align-items: center;
             justify-content: space-between;
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .mobile-header .logo {
+            flex: 1;
+            justify-content: center;
+        }
+
+        .mobile-header .logo-text {
+            font-size: 1.1rem;
         }
 
         .menu-btn {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
+            border-radius: var(--radius-md);
             padding: var(--spacing-sm) var(--spacing-md);
             color: var(--text-primary);
             cursor: pointer;
-            font-size: 1.125rem;
+            font-size: 1.25rem;
+            min-width: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .menu-btn:hover,
+        .menu-btn:active {
+            background: var(--bg-card-hover);
+            border-color: var(--text-muted);
         }
 
         .overlay {
@@ -2062,6 +2397,7 @@
             bottom: 0;
             background: rgba(0, 0, 0, 0.5);
             z-index: 999;
+            backdrop-filter: blur(2px);
         }
 
         .overlay.show {
@@ -2109,14 +2445,16 @@
     <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
     
     <div class="mobile-header">
-        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <button class="menu-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
         <div class="logo">
             <div class="logo-icon">⚽</div>
             <div>
                 <div class="logo-text">NerdzStatz</div>
             </div>
         </div>
-        <div style="width: 48px;"></div>
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+            <span class="theme-icon">🌙</span>
+        </button>
     </div>
 
     <div class="app-container">
@@ -2130,10 +2468,13 @@
                         <div class="logo-subtitle">Professional Analytics</div>
                     </div>
                 </div>
-                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
-                    <span class="icon-sun">☀️</span>
-                    <span class="icon-moon">🌙</span>
-                </button>
+                <div class="sidebar-header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+                        <span class="icon-sun">☀️</span>
+                        <span class="icon-moon">🌙</span>
+                    </button>
+                    <button class="sidebar-close-btn" onclick="closeSidebar()" aria-label="Close menu">✕</button>
+                </div>
             </div>
 
             <nav class="league-nav">
@@ -2416,8 +2757,7 @@
                         </div>
                         <div class="match-vs">
                             <div class="match-vs-text">VS</div>
-                            ${predictions.mostLikely ? `<div class="match-predicted-score">${predictions.mostLikely.score}</div>` : ''}
-                            ${getPredictionSummary(predictions.outcomes, predictions.mostLikely, fixture)}
+                            ${getPredictionSummary(predictions.outcomes, fixture)}
                         </div>
                         <div class="match-team">
                             <img src="${fixture.teams.away.logo}" alt="" class="match-team-logo" onerror="this.style.display='none'">
@@ -3649,6 +3989,14 @@
             
             const top8 = scorelines.slice(0, 8);
             
+            // Get computed styles for theme-aware colors
+            const computedStyle = getComputedStyle(document.documentElement);
+            const textPrimary = computedStyle.getPropertyValue('--text-primary').trim() || '#1a1a1a';
+            const textMuted = computedStyle.getPropertyValue('--text-muted').trim() || '#8a8a8a';
+            const bgCard = computedStyle.getPropertyValue('--bg-card').trim() || '#ffffff';
+            const borderColor = computedStyle.getPropertyValue('--border-color').trim() || '#e5e5e5';
+            const bgAccent = computedStyle.getPropertyValue('--bg-accent').trim() || '#e5e5e5';
+            
             state.charts[canvasId] = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -3656,8 +4004,8 @@
                     datasets: [{
                         label: 'Probability %',
                         data: top8.map(s => (s.probability * 100).toFixed(1)),
-                        backgroundColor: top8.map((_, i) => i === 0 ? '#1a1a1a' : '#e5e5e5'),
-                        borderColor: '#1a1a1a',
+                        backgroundColor: top8.map((_, i) => i === 0 ? textPrimary : bgAccent),
+                        borderColor: textPrimary,
                         borderWidth: 1,
                         borderRadius: 3
                     }]
@@ -3665,28 +4013,35 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 10
+                        }
+                    },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#ffffff',
-                            titleColor: '#1a1a1a',
-                            bodyColor: '#4a4a4a',
-                            borderColor: '#e5e5e5',
+                            backgroundColor: bgCard,
+                            titleColor: textPrimary,
+                            bodyColor: textMuted,
+                            borderColor: borderColor,
                             borderWidth: 1
                         }
                     },
                     scales: {
                         x: {
-                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            grid: { color: borderColor + '40' },
                             ticks: { 
-                                color: '#8a8a8a',
+                                color: textMuted,
                                 font: { family: 'IBM Plex Mono' }
                             }
                         },
                         y: {
-                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            beginAtZero: true,
+                            grace: '5%',
+                            grid: { color: borderColor + '40' },
                             ticks: { 
-                                color: '#8a8a8a',
+                                color: textMuted,
                                 font: { family: 'IBM Plex Mono' },
                                 callback: (val) => val + '%'
                             }
@@ -3797,7 +4152,7 @@
         }
 
         // Helper: Get prediction summary text
-        function getPredictionSummary(outcomes, mostLikely, fixture) {
+        function getPredictionSummary(outcomes, fixture) {
             if (!outcomes) return '';
             
             const home = parseFloat(outcomes.homeWin) || 0;
@@ -3822,24 +4177,11 @@
                 icon = '🤝';
             }
             
-            // Determine if scoreline matches outcome prediction
-            const scorelineOutcome = mostLikely?.homeGoals > mostLikely?.awayGoals ? 'home' : 
-                                     mostLikely?.awayGoals > mostLikely?.homeGoals ? 'away' : 'draw';
-            const outcomeWinner = home > away && home > draw ? 'home' : 
-                                  away > home && away > draw ? 'away' : 'draw';
-            
-            const matches = scorelineOutcome === outcomeWinner;
-            
             return `
                 <div class="prediction-summary">
                     <span class="prediction-summary-text">
                         ${icon} <strong>${favored}</strong> favored at ${prob.toFixed(1)}%
                     </span>
-                    ${!matches && mostLikely ? `
-                        <span class="prediction-summary-note">
-                            Most likely exact score: ${mostLikely.score} (${mostLikely.percentageStr})
-                        </span>
-                    ` : ''}
                 </div>
             `;
         }
@@ -3865,6 +4207,15 @@
             
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
+            
+            // Re-render charts with new theme colors
+            if (state.prediction && state.selectedFixture) {
+                const metrics = state.prediction.calculatedMetrics || {};
+                const predictions = metrics.predictions || {};
+                if (predictions.topScorelines) {
+                    renderScorelineChart('scoreline-chart', predictions.topScorelines);
+                }
+            }
         }
 
         // Initialize theme from localStorage on page load

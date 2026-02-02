@@ -112,14 +112,22 @@ Your response MUST follow this structure EXACTLY:
    - Where model confidence may be overstated
    - Small margins, variance drivers, missing variables
 
-6. Contextual Flags (If Provided)
+6. Match Incentive Analysis
+   - League position context (title race, European spots, relegation battle)
+   - Points gap to key positions (above and below)
+   - Upcoming fixture difficulty and importance
+   - Cup competitions or continental commitments
+   - Motivation level assessment for each team
+   - Potential for rotation or prioritization of other matches
+
+7. Contextual Flags (If Provided)
    - Injuries, suspensions, rest, venue
    - Fixture congestion and fatigue indicators
    - Rotation risk assessment (upcoming important matches)
    - Schedule density impact on team selection
    - Directional impact ONLY unless quantified
 
-7. Confidence Framing (Non-Predictive)
+8. Confidence Framing (Non-Predictive)
    - Confidence level: LOW / MODERATE / HIGH
    - Justification rooted in data completeness and signal alignment
    - Reinforcement of probabilistic uncertainty
@@ -176,6 +184,7 @@ Venue: ${fixture.fixture.venue?.name || 'TBD'}
 ${buildModelSignalsSection(scorelineAnalysis, matchData)}
 ${buildStandingsSection(matchData)}
 ${buildFormSection(matchData)}
+${buildMatchIncentiveSection(matchData, fixture)}
 ${buildPlayerQualitySection(matchData, scorelineAnalysis)}
 ${buildInjurySection(matchData, scorelineAnalysis)}
 ${buildFixtureCongestionSection(matchData)}
@@ -310,6 +319,356 @@ ${formatMatches(matchData.awayRecentMatches)}
   Form Points: ${calculateFormPoints(matchData.awayRecentMatches)}
   Goals Scored Avg: ${matchData.awayStats?.avgGoalsFor || 'N/A'}
   Goals Conceded Avg: ${matchData.awayStats?.avgGoalsAgainst || 'N/A'}`;
+}
+
+/**
+ * Build match incentive analysis section
+ * Analyzes team motivation based on league position, upcoming fixtures, etc.
+ */
+function buildMatchIncentiveSection(matchData, fixture) {
+  const standings = matchData.standings;
+  const fixtureCongestion = matchData.fixtureCongestion;
+  const leagueName = fixture?.league?.name || 'Unknown League';
+  
+  if (!standings || (!standings.home && !standings.away)) {
+    return `
+═══════════════════════════════════════════════════════════════
+MATCH INCENTIVE ANALYSIS
+═══════════════════════════════════════════════════════════════
+⚠️ Insufficient standings data for incentive analysis`;
+  }
+
+  const homePos = standings.home?.position || null;
+  const awayPos = standings.away?.position || null;
+  const homePoints = standings.home?.points || 0;
+  const awayPoints = standings.away?.points || 0;
+  const homePlayed = standings.home?.played || 0;
+  const awayPlayed = standings.away?.played || 0;
+  
+  // Calculate points per game for trajectory
+  const homePPG = homePlayed > 0 ? (homePoints / homePlayed).toFixed(2) : 'N/A';
+  const awayPPG = awayPlayed > 0 ? (awayPoints / awayPlayed).toFixed(2) : 'N/A';
+  
+  // Determine league context (adjust thresholds based on league)
+  const leagueContext = getLeaguePositionContext(leagueName, homePos, awayPos, homePoints, awayPoints);
+  
+  // Build incentive assessment for each team
+  const homeIncentive = assessTeamIncentive(
+    'HOME',
+    homePos,
+    homePoints,
+    homePPG,
+    standings.home?.form,
+    standings.home?.goalsDiff,
+    fixtureCongestion?.home,
+    leagueContext.home
+  );
+  
+  const awayIncentive = assessTeamIncentive(
+    'AWAY',
+    awayPos,
+    awayPoints,
+    awayPPG,
+    standings.away?.form,
+    standings.away?.goalsDiff,
+    fixtureCongestion?.away,
+    leagueContext.away
+  );
+
+  return `
+═══════════════════════════════════════════════════════════════
+MATCH INCENTIVE ANALYSIS
+═══════════════════════════════════════════════════════════════
+
+HOME TEAM INCENTIVES:
+├─ League Position: ${homePos || 'N/A'}
+├─ Points: ${homePoints} (${homePPG} PPG)
+├─ Position Context: ${homeIncentive.positionContext}
+├─ Points Gap Above: ${leagueContext.home.gapAbove !== null ? `${leagueContext.home.gapAbove} pts` : 'N/A (top of table)'}
+├─ Points Gap Below: ${leagueContext.home.gapBelow !== null ? `${leagueContext.home.gapBelow} pts` : 'N/A (bottom of table)'}
+├─ Motivation Level: ${homeIncentive.motivationLevel}
+├─ Key Incentive: ${homeIncentive.keyIncentive}
+${homeIncentive.rotationRisk ? `├─ 🔄 Rotation Risk: ${homeIncentive.rotationRisk}` : ''}
+└─ Assessment: ${homeIncentive.assessment}
+
+AWAY TEAM INCENTIVES:
+├─ League Position: ${awayPos || 'N/A'}
+├─ Points: ${awayPoints} (${awayPPG} PPG)
+├─ Position Context: ${awayIncentive.positionContext}
+├─ Points Gap Above: ${leagueContext.away.gapAbove !== null ? `${leagueContext.away.gapAbove} pts` : 'N/A (top of table)'}
+├─ Points Gap Below: ${leagueContext.away.gapBelow !== null ? `${leagueContext.away.gapBelow} pts` : 'N/A (bottom of table)'}
+├─ Motivation Level: ${awayIncentive.motivationLevel}
+├─ Key Incentive: ${awayIncentive.keyIncentive}
+${awayIncentive.rotationRisk ? `├─ 🔄 Rotation Risk: ${awayIncentive.rotationRisk}` : ''}
+└─ Assessment: ${awayIncentive.assessment}
+
+INCENTIVE COMPARISON:
+├─ Higher Motivation: ${compareMotivation(homeIncentive, awayIncentive)}
+├─ Stakes Level: ${getMatchStakesLevel(homeIncentive, awayIncentive)}
+└─ Narrative: ${getMatchNarrative(homeIncentive, awayIncentive, leagueContext)}`;
+}
+
+/**
+ * Get league position context based on league structure
+ */
+function getLeaguePositionContext(leagueName, homePos, awayPos, homePoints, awayPoints) {
+  // Standard thresholds (can be customized per league)
+  const config = {
+    titleRace: 4,          // Top 4 in title race
+    championsLeague: 4,    // Top 4 for CL
+    europaLeague: 6,       // 5-6 for EL
+    conferenceLeague: 7,   // 7 for ECL
+    relegation: 3,         // Bottom 3 relegated
+    totalTeams: 20         // Default league size
+  };
+  
+  // Adjust for specific leagues
+  if (leagueName.includes('Bundesliga') && !leagueName.includes('2.')) {
+    config.totalTeams = 18;
+    config.relegation = 2;  // Direct relegation for bottom 2
+  } else if (leagueName.includes('Serie A')) {
+    config.totalTeams = 20;
+    config.relegation = 3;
+  } else if (leagueName.includes('La Liga') || leagueName.includes('LaLiga')) {
+    config.totalTeams = 20;
+    config.relegation = 3;
+  } else if (leagueName.includes('Ligue 1')) {
+    config.totalTeams = 18;
+    config.relegation = 2;
+  }
+  
+  const relegationZone = config.totalTeams - config.relegation + 1;
+  
+  return {
+    home: categorizePosition(homePos, homePoints, config, relegationZone),
+    away: categorizePosition(awayPos, awayPoints, config, relegationZone),
+    config
+  };
+}
+
+/**
+ * Categorize a team's position context
+ */
+function categorizePosition(position, points, config, relegationZone) {
+  if (!position) return { category: 'unknown', gapAbove: null, gapBelow: null };
+  
+  let category = 'mid-table';
+  let gapAbove = null;
+  let gapBelow = null;
+  
+  if (position === 1) {
+    category = 'title_leader';
+    gapAbove = null;  // Already at top
+  } else if (position <= config.titleRace) {
+    category = 'title_race';
+  } else if (position <= config.championsLeague) {
+    category = 'champions_league_race';
+  } else if (position <= config.europaLeague) {
+    category = 'europa_league_race';
+  } else if (position <= config.conferenceLeague) {
+    category = 'conference_league_race';
+  } else if (position >= relegationZone) {
+    category = 'relegation_zone';
+  } else if (position >= relegationZone - 3) {
+    category = 'relegation_battle';
+  }
+  
+  // Note: Actual gap calculations would require full standings data
+  // These are placeholder values - in real implementation, we'd calculate from full table
+  gapAbove = position > 1 ? 'varies' : null;
+  gapBelow = position < config.totalTeams ? 'varies' : null;
+  
+  return { category, gapAbove, gapBelow };
+}
+
+/**
+ * Assess team incentive based on all available data
+ */
+function assessTeamIncentive(label, position, points, ppg, form, goalsDiff, congestion, leagueContext) {
+  const result = {
+    positionContext: 'Unknown',
+    motivationLevel: 'MODERATE',
+    keyIncentive: 'Standard league points',
+    assessment: 'No clear incentive pattern identified',
+    rotationRisk: null
+  };
+  
+  if (!position) return result;
+  
+  // Determine position context description
+  switch (leagueContext.category) {
+    case 'title_leader':
+      result.positionContext = '🏆 TITLE LEADER';
+      result.motivationLevel = 'VERY HIGH';
+      result.keyIncentive = 'Defending league lead, pursuing championship';
+      result.assessment = 'Maximum motivation to maintain advantage at top';
+      break;
+    case 'title_race':
+      result.positionContext = '🏆 TITLE RACE';
+      result.motivationLevel = 'VERY HIGH';
+      result.keyIncentive = 'Chasing league title, every point crucial';
+      result.assessment = 'High-stakes positioning, unlikely to ease off';
+      break;
+    case 'champions_league_race':
+      result.positionContext = '⭐ CHAMPIONS LEAGUE RACE';
+      result.motivationLevel = 'HIGH';
+      result.keyIncentive = 'Securing top-4 finish for UCL qualification';
+      result.assessment = 'Strong financial and competitive incentive';
+      break;
+    case 'europa_league_race':
+      result.positionContext = '🌍 EUROPA LEAGUE RACE';
+      result.motivationLevel = 'HIGH';
+      result.keyIncentive = 'Pushing for European qualification';
+      result.assessment = 'Motivated to secure continental football';
+      break;
+    case 'conference_league_race':
+      result.positionContext = '🏅 CONFERENCE LEAGUE RACE';
+      result.motivationLevel = 'MODERATE-HIGH';
+      result.keyIncentive = 'European qualification within reach';
+      result.assessment = 'European football provides motivation boost';
+      break;
+    case 'relegation_zone':
+      result.positionContext = '🔴 RELEGATION ZONE';
+      result.motivationLevel = 'DESPERATE';
+      result.keyIncentive = 'Survival - must win to escape drop zone';
+      result.assessment = 'Maximum desperation, expect high intensity';
+      break;
+    case 'relegation_battle':
+      result.positionContext = '⚠️ RELEGATION BATTLE';
+      result.motivationLevel = 'VERY HIGH';
+      result.keyIncentive = 'Staying clear of relegation zone';
+      result.assessment = 'Points crucial for survival, high motivation';
+      break;
+    default:
+      result.positionContext = '📊 MID-TABLE';
+      result.motivationLevel = 'MODERATE';
+      result.keyIncentive = 'General league positioning, pride';
+      result.assessment = 'Neither extreme pressure nor lack of motivation';
+  }
+  
+  // Adjust for form
+  if (form) {
+    const recentWins = (form.match(/W/g) || []).length;
+    const recentLosses = (form.match(/L/g) || []).length;
+    
+    if (recentLosses >= 3) {
+      result.assessment += '. Poor recent form may increase urgency';
+    } else if (recentWins >= 4) {
+      result.assessment += '. Strong form suggests high confidence';
+    }
+  }
+  
+  // Check for rotation risk from fixture congestion
+  if (congestion) {
+    if (congestion.hasBigMatchComing && congestion.daysUntilNextMatch <= 4) {
+      const importance = congestion.nextMatchImportance?.replace(/_/g, ' ') || 'important match';
+      result.rotationRisk = `HIGH - ${importance} in ${congestion.daysUntilNextMatch} days`;
+      result.assessment += `. May rotate key players with ${importance} upcoming`;
+      
+      // Adjust motivation if prioritizing other competition
+      if (congestion.nextMatchImportance?.includes('cup_final') || 
+          congestion.nextMatchImportance?.includes('champions_league')) {
+        result.motivationLevel = adjustMotivation(result.motivationLevel, -1);
+      }
+    } else if (congestion.rotationLikelihood === 'high') {
+      result.rotationRisk = 'MODERATE - Heavy schedule may force changes';
+    } else if (congestion.congestionLevel === 'critical') {
+      result.rotationRisk = 'MODERATE - Fixture congestion concerns';
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Adjust motivation level up or down
+ */
+function adjustMotivation(current, adjustment) {
+  const levels = ['LOW', 'MODERATE', 'MODERATE-HIGH', 'HIGH', 'VERY HIGH', 'DESPERATE'];
+  const currentIndex = levels.indexOf(current);
+  if (currentIndex === -1) return current;
+  const newIndex = Math.max(0, Math.min(levels.length - 1, currentIndex + adjustment));
+  return levels[newIndex];
+}
+
+/**
+ * Compare motivation between teams
+ */
+function compareMotivation(homeIncentive, awayIncentive) {
+  const levels = ['LOW', 'MODERATE', 'MODERATE-HIGH', 'HIGH', 'VERY HIGH', 'DESPERATE'];
+  const homeLevel = levels.indexOf(homeIncentive.motivationLevel);
+  const awayLevel = levels.indexOf(awayIncentive.motivationLevel);
+  
+  if (homeLevel > awayLevel + 1) return 'HOME TEAM (significant advantage)';
+  if (homeLevel > awayLevel) return 'HOME TEAM (slight advantage)';
+  if (awayLevel > homeLevel + 1) return 'AWAY TEAM (significant advantage)';
+  if (awayLevel > homeLevel) return 'AWAY TEAM (slight advantage)';
+  return 'EVEN - Both teams similarly motivated';
+}
+
+/**
+ * Determine overall match stakes level
+ */
+function getMatchStakesLevel(homeIncentive, awayIncentive) {
+  const highStakesContexts = ['title_leader', 'title_race', 'relegation_zone', 'relegation_battle'];
+  const homeContext = homeIncentive.positionContext.toLowerCase();
+  const awayContext = awayIncentive.positionContext.toLowerCase();
+  
+  const homeHighStakes = highStakesContexts.some(c => homeContext.includes(c.replace('_', ' ')));
+  const awayHighStakes = highStakesContexts.some(c => awayContext.includes(c.replace('_', ' ')));
+  
+  if (homeIncentive.motivationLevel === 'DESPERATE' || awayIncentive.motivationLevel === 'DESPERATE') {
+    return '🔥 CRITICAL - Survival implications';
+  }
+  if (homeHighStakes && awayHighStakes) {
+    return '⚡ VERY HIGH - Both teams in key positions';
+  }
+  if (homeHighStakes || awayHighStakes) {
+    return '📈 HIGH - At least one team with major incentive';
+  }
+  if (homeIncentive.motivationLevel === 'HIGH' || awayIncentive.motivationLevel === 'HIGH') {
+    return '📊 MODERATE-HIGH - European race implications';
+  }
+  return '📋 STANDARD - Routine league fixture';
+}
+
+/**
+ * Generate match narrative based on incentives
+ */
+function getMatchNarrative(homeIncentive, awayIncentive, leagueContext) {
+  const homeContext = homeIncentive.positionContext;
+  const awayContext = awayIncentive.positionContext;
+  
+  // Title clash
+  if (homeContext.includes('TITLE') && awayContext.includes('TITLE')) {
+    return 'Title showdown - both teams fighting for the championship';
+  }
+  
+  // Relegation battle
+  if (homeContext.includes('RELEGATION') && awayContext.includes('RELEGATION')) {
+    return 'Relegation six-pointer - loser faces increased drop danger';
+  }
+  
+  // Title vs Relegation
+  if (homeContext.includes('TITLE') && awayContext.includes('RELEGATION')) {
+    return 'David vs Goliath - league leaders face desperate strugglers';
+  }
+  if (awayContext.includes('TITLE') && homeContext.includes('RELEGATION')) {
+    return 'David vs Goliath - strugglers host title challengers';
+  }
+  
+  // European race
+  if (homeContext.includes('CHAMPIONS') || awayContext.includes('CHAMPIONS') ||
+      homeContext.includes('EUROPA') || awayContext.includes('EUROPA')) {
+    return 'European race implications - valuable points for continental qualification';
+  }
+  
+  // Mixed stakes
+  if (homeIncentive.rotationRisk || awayIncentive.rotationRisk) {
+    return 'Rotation risk present - team selections may reflect broader priorities';
+  }
+  
+  return 'Standard league encounter with routine positional implications';
 }
 
 /**
@@ -633,6 +992,7 @@ module.exports = {
   buildModelSignalsSection,
   buildStandingsSection,
   buildFormSection,
+  buildMatchIncentiveSection,
   buildPlayerQualitySection,
   buildInjurySection,
   buildFixtureCongestionSection,
