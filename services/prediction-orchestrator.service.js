@@ -150,6 +150,144 @@ class PredictionOrchestrator {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // GENERATE LEAGUE-SPECIFIC PREDICTIONS
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Generate predictions for a specific league only
+   * @param {string} leagueKey - League key (e.g., 'epl', 'laliga')
+   * @returns {Promise<Object>} Generation statistics
+   */
+  async generateLeaguePredictions(leagueKey) {
+    const leagueConfig = LEAGUES[leagueKey];
+    
+    if (!leagueConfig) {
+      throw new Error(`Invalid league: ${leagueKey}. Available: ${Object.keys(LEAGUES).join(', ')}`);
+    }
+
+    console.log(`\n🚀 PREDICTION GENERATION STARTED - ${leagueConfig.name.toUpperCase()}`);
+    console.log('═══════════════════════════════════════════════════════════════\n');
+    console.log(`Time: ${new Date().toLocaleString()}`);
+    console.log(`League: ${leagueConfig.name}`);
+    console.log(`Generating predictions for next ${FETCH_CONFIG.daysAhead} days\n`);
+
+    const startTime = Date.now();
+    const stats = {
+      total: 0,
+      success: 0,
+      failed: 0,
+      cached: 0,
+      skipped: 0,
+      league: leagueConfig.name,
+      errors: []
+    };
+
+    try {
+      // Step 1: Fetch league statistics for this league only
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log(`📊 FETCHING ${leagueConfig.name.toUpperCase()} STATISTICS`);
+      console.log('═══════════════════════════════════════════════════════════════\n');
+
+      const leagueStats = await this.leagueStats.getLeagueStats(leagueKey, leagueConfig);
+      
+      // Step 2: Fetch upcoming fixtures for this league only
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log(`📅 FETCHING ${leagueConfig.name.toUpperCase()} FIXTURES`);
+      console.log('═══════════════════════════════════════════════════════════════\n');
+
+      const fixtures = await this.footballAPI.getUpcomingFixtures(
+        leagueConfig.id,
+        leagueConfig.season,
+        FETCH_CONFIG.daysAhead
+      );
+
+      console.log(`   ✅ ${leagueConfig.name}: ${fixtures.length} upcoming matches\n`);
+
+      stats.total = fixtures.length;
+
+      if (fixtures.length === 0) {
+        console.log(`⚠️  No upcoming fixtures found for ${leagueConfig.name}\n`);
+        return stats;
+      }
+
+      // Step 3: Generate predictions
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log(`🎯 GENERATING ${leagueConfig.name.toUpperCase()} PREDICTIONS`);
+      console.log('═══════════════════════════════════════════════════════════════\n');
+
+      for (let i = 0; i < fixtures.length; i++) {
+        const fixture = fixtures[i];
+        const fixtureId = fixture.fixture.id;
+        const matchName = `${fixture.teams.home.name} vs ${fixture.teams.away.name}`;
+
+        console.log(`[${i + 1}/${fixtures.length}] ${matchName}`);
+        console.log(`   League: ${leagueConfig.name}`);
+        console.log(`   Date: ${new Date(fixture.fixture.date).toLocaleString()}`);
+
+        try {
+          // Check if prediction already exists
+          const existingPrediction = this.cache.getPrediction(fixtureId);
+          
+          if (existingPrediction) {
+            console.log(`   💾 Already cached - skipping\n`);
+            stats.cached++;
+            continue;
+          }
+
+          // Generate new prediction
+          const predictionData = await this.generateSinglePrediction(
+            fixture,
+            leagueKey,
+            leagueStats
+          );
+
+          if (predictionData) {
+            stats.success++;
+            console.log(`   ✅ Prediction generated successfully\n`);
+          } else {
+            stats.skipped++;
+            console.log(`   ⚠️  Prediction skipped\n`);
+          }
+
+          // Delay before next prediction
+          if (i < fixtures.length - 1) {
+            const delay = FETCH_CONFIG.delays.betweenPredictions;
+            console.log(`   ⏳ Waiting ${delay/1000}s...\n`);
+            await this._delay(delay);
+          }
+
+        } catch (error) {
+          console.error(`   ❌ Error: ${error.message}\n`);
+          stats.failed++;
+          stats.errors.push({
+            match: matchName,
+            error: error.message
+          });
+
+          // If rate limit, wait longer
+          if (error.response?.status === 429) {
+            const delay = FETCH_CONFIG.delays.afterRateLimit;
+            console.log(`   ⚠️  Rate limit. Waiting ${delay/1000}s...\n`);
+            await this._delay(delay);
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('\n❌ CRITICAL ERROR:', error.message);
+      stats.errors.push({
+        critical: true,
+        error: error.message
+      });
+    }
+
+    // Final summary
+    this._printSummary(stats, startTime);
+
+    return stats;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // GENERATE SINGLE PREDICTION
   // ═══════════════════════════════════════════════════════════════
 
@@ -183,6 +321,7 @@ class PredictionOrchestrator {
       // Step 3: Create comprehensive prediction object
       const predictionData = {
         prediction: prediction.analysis,
+        calculatedMetrics: prediction.calculatedMetrics,  // Include scoreline calculations
         metadata: prediction.metadata,
         fixture: {
           id: fixtureId,
@@ -206,6 +345,7 @@ class PredictionOrchestrator {
           home: matchData.homeRecentMatches || [],
           away: matchData.awayRecentMatches || []
         },
+        h2h: matchData.h2h || null,  // Head-to-head data
         squad: {
           home: matchData.homeSquad || [],
           away: matchData.awaySquad || []
@@ -214,6 +354,7 @@ class PredictionOrchestrator {
           home: matchData.lastLineup?.homePlayers || [],
           away: matchData.lastLineup?.awayPlayers || []
         },
+        fixtureCongestion: matchData.fixtureCongestion || null,  // Fixture congestion / fatigue analysis
         generatedAt: new Date().toISOString()
       };
 

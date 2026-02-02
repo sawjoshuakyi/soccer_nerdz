@@ -182,26 +182,40 @@ class LeagueStatisticsService {
   }
 
   /**
-   * Get all league statistics
+   * Get all league statistics (parallelized in batches)
    * @param {Object} leagues - All league configurations
    * @returns {Promise<Object>} All league stats
    */
   async getAllLeagueStats(leagues) {
-    console.log('\n📊 Fetching league statistics for all leagues...\n');
-    
-    const allStats = {};
+    console.log('\n📊 Fetching league statistics for all leagues (parallel)...\n');
 
-    for (const [leagueKey, leagueConfig] of Object.entries(leagues)) {
-      try {
-        const stats = await this.getLeagueStats(leagueKey, leagueConfig);
+    const leagueEntries = Object.entries(leagues);
+    const allStats = {};
+    const BATCH_SIZE = 3;
+
+    for (let i = 0; i < leagueEntries.length; i += BATCH_SIZE) {
+      const batch = leagueEntries.slice(i, i + BATCH_SIZE);
+
+      const batchPromises = batch.map(async ([leagueKey, leagueConfig]) => {
+        try {
+          const stats = await this.getLeagueStats(leagueKey, leagueConfig);
+          return { leagueKey, stats };
+        } catch (error) {
+          console.error(`   ❌ Error for ${leagueKey}: ${error.message}`);
+          return { leagueKey, stats: null };
+        }
+      });
+
+      const results = await Promise.all(batchPromises);
+      results.forEach(({ leagueKey, stats }) => {
         if (stats) {
           allStats[leagueKey] = stats;
         }
-        
-        // Small delay between leagues
+      });
+
+      // Small delay between batches
+      if (i + BATCH_SIZE < leagueEntries.length) {
         await this._delay(1000);
-      } catch (error) {
-        console.error(`   ❌ Error for ${leagueKey}: ${error.message}`);
       }
     }
 

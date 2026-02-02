@@ -153,33 +153,43 @@ class FootballAPIService {
    * @returns {Promise<Array>} All upcoming fixtures with league info
    */
   async getAllUpcomingFixtures(leagues, days = 7) {
-    console.log(`\n📅 Fetching upcoming fixtures for next ${days} days...\n`);
-    
+    console.log(`\n📅 Fetching upcoming fixtures for next ${days} days (parallel)...\n`);
+
+    // Fetch all leagues in parallel (batches of 3 to respect rate limits)
+    const leagueEntries = Object.entries(leagues);
     const allFixtures = [];
+    const BATCH_SIZE = 3;
 
-    for (const [leagueKey, leagueConfig] of Object.entries(leagues)) {
-      try {
-        const fixtures = await this.getUpcomingFixtures(
-          leagueConfig.id, 
-          leagueConfig.season, 
-          days
-        );
+    for (let i = 0; i < leagueEntries.length; i += BATCH_SIZE) {
+      const batch = leagueEntries.slice(i, i + BATCH_SIZE);
 
-        fixtures.forEach(fixture => {
-          allFixtures.push({
+      const batchPromises = batch.map(async ([leagueKey, leagueConfig]) => {
+        try {
+          const fixtures = await this.getUpcomingFixtures(
+            leagueConfig.id,
+            leagueConfig.season,
+            days
+          );
+
+          console.log(`   ✅ ${leagueConfig.name}: ${fixtures.length} upcoming matches`);
+
+          return fixtures.map(fixture => ({
             fixture,
             leagueKey,
             leagueConfig
-          });
-        });
+          }));
+        } catch (error) {
+          console.error(`   ❌ ${leagueKey}: ${error.message}`);
+          return [];
+        }
+      });
 
-        console.log(`   ✅ ${leagueConfig.name}: ${fixtures.length} upcoming matches`);
-        
-        // Small delay between leagues
-        await this._delay(0);
+      const batchResults = await Promise.all(batchPromises);
+      batchResults.forEach(fixtures => allFixtures.push(...fixtures));
 
-      } catch (error) {
-        console.error(`   ❌ ${leagueKey}: ${error.message}`);
+      // Small delay between batches
+      if (i + BATCH_SIZE < leagueEntries.length) {
+        await this._delay(1000);
       }
     }
 
@@ -188,29 +198,57 @@ class FootballAPIService {
   }
 
   /**
-   * Get recent matches for a team
+   * Get recent matches for a team (with caching)
    * @param {number} teamId - Team ID
    * @param {number} season - Season year
    * @param {number} count - Number of matches
    * @returns {Promise<Array>} Recent matches
    */
   async getRecentMatches(teamId, season, count = 10) {
+    // Check cache first
+    const cached = this.cache.getRecentMatches(teamId, season);
+    if (cached) {
+      console.log(`   💾 Recent matches cache hit: Team ${teamId}`);
+      return cached;
+    }
+
     const endpoint = ENDPOINTS.fixtures.last(teamId, season, count);
     const data = await this.request(endpoint);
-    return data.response || [];
+    const matches = data.response || [];
+
+    // Cache the result
+    if (matches.length > 0) {
+      this.cache.setRecentMatches(teamId, season, matches);
+    }
+
+    return matches;
   }
 
   /**
-   * Get head-to-head history
+   * Get head-to-head history (with caching)
    * @param {number} homeId - Home team ID
    * @param {number} awayId - Away team ID
    * @param {number} count - Number of matches
    * @returns {Promise<Array>} H2H matches
    */
   async getHeadToHead(homeId, awayId, count = 10) {
+    // Check cache first
+    const cached = this.cache.getH2H(homeId, awayId);
+    if (cached) {
+      console.log(`   💾 H2H cache hit: ${homeId} vs ${awayId}`);
+      return cached;
+    }
+
     const endpoint = ENDPOINTS.fixtures.h2h(homeId, awayId, count);
     const data = await this.request(endpoint);
-    return data.response || [];
+    const h2h = data.response || [];
+
+    // Cache the result
+    if (h2h.length > 0) {
+      this.cache.setH2H(homeId, awayId, h2h);
+    }
+
+    return h2h;
   }
 
   /**
@@ -236,20 +274,224 @@ class FootballAPIService {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // FIXTURE CONGESTION / FATIGUE ANALYSIS
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Get upcoming fixtures for a team (next N games across all competitions)
+   * @param {number} teamId - Team ID
+   * @param {number} count - Number of upcoming fixtures (default 5)
+   * @returns {Promise<Array>} Upcoming fixtures
+   */
+  async getTeamUpcomingFixtures(teamId, count = 5) {
+    const endpoint = `fixtures?team=${teamId}&next=${count}`;
+    
+    try {
+      const data = await this.request(endpoint);
+      return data.response || [];
+    } catch (error) {
+      console.log(`   ⚠️  Could not fetch upcoming fixtures for team ${teamId}`);
+      return [];
+    }
+  }
+
+  /**
+   * Analyze fixture congestion for a team
+   * @param {number} teamId - Team ID  
+   * @param {string} matchDate - Date of the match being analyzed
+   * @param {Array} recentMatches - Recent matches already fetched
+   * @returns {Promise<Object>} Fixture congestion analysis
+   */
+  async analyzeFixtureCongestion(teamId, matchDate, recentMatches = []) {
+    try {
+      // Get upcoming fixtures after the match
+      const upcomingFixtures = await this.getTeamUpcomingFixtures(teamId, 5);
+      
+      const targetDate = new Date(matchDate);
+      const now = new Date();
+      
+      // Filter upcoming fixtures that are AFTER the match date
+      const futureAfterMatch = upcomingFixtures.filter(f => {
+        const fDate = new Date(f.fixture.date);
+        return fDate > targetDate;
+      });
+      
+      // Calculate days since last match from recent matches
+      let daysSinceLastMatch = null;
+      let lastMatch = null;
+      if (recentMatches && recentMatches.length > 0) {
+        const recent = recentMatches.find(m => m.date);
+        if (recent) {
+          lastMatch = {
+            date: recent.date,
+            opponent: recent.opponent,
+            competition: recent.league || 'Unknown',
+            result: recent.result,
+            score: recent.score
+          };
+          const lastMatchDate = new Date(recent.date);
+          daysSinceLastMatch = Math.floor((targetDate - lastMatchDate) / (1000 * 60 * 60 * 24));
+        }
+      }
+      
+      // Analyze the next match after this one
+      let nextMatch = null;
+      let daysUntilNextMatch = null;
+      let nextMatchImportance = 'standard';
+      
+      if (futureAfterMatch.length > 0) {
+        const next = futureAfterMatch[0];
+        nextMatch = {
+          date: next.fixture.date,
+          opponent: next.teams.home.id === teamId ? next.teams.away.name : next.teams.home.name,
+          competition: next.league?.name || 'Unknown',
+          venue: next.teams.home.id === teamId ? 'Home' : 'Away',
+          round: next.league?.round || ''
+        };
+        
+        const nextMatchDate = new Date(next.fixture.date);
+        daysUntilNextMatch = Math.floor((nextMatchDate - targetDate) / (1000 * 60 * 60 * 24));
+        
+        // Determine importance of next match
+        const competitionName = (next.league?.name || '').toLowerCase();
+        if (competitionName.includes('champions league') || competitionName.includes('ucl')) {
+          nextMatchImportance = 'champions_league';
+        } else if (competitionName.includes('europa')) {
+          nextMatchImportance = 'europa_league';
+        } else if (competitionName.includes('cup') || competitionName.includes('copa') || competitionName.includes('coupe')) {
+          nextMatchImportance = 'cup';
+        } else if (competitionName.includes('final')) {
+          nextMatchImportance = 'final';
+        }
+      }
+      
+      // Calculate congestion metrics
+      const matchesInNext7Days = futureAfterMatch.filter(f => {
+        const fDate = new Date(f.fixture.date);
+        const diffDays = (fDate - targetDate) / (1000 * 60 * 60 * 24);
+        return diffDays <= 7;
+      }).length;
+      
+      const matchesInNext14Days = futureAfterMatch.filter(f => {
+        const fDate = new Date(f.fixture.date);
+        const diffDays = (fDate - targetDate) / (1000 * 60 * 60 * 24);
+        return diffDays <= 14;
+      }).length;
+      
+      // Fatigue indicators
+      const isFatigued = daysSinceLastMatch !== null && daysSinceLastMatch <= 3;
+      const hasQuickTurnaround = daysUntilNextMatch !== null && daysUntilNextMatch <= 3;
+      const hasBigMatchComing = ['champions_league', 'europa_league', 'final'].includes(nextMatchImportance) && daysUntilNextMatch !== null && daysUntilNextMatch <= 7;
+      const congestionLevel = this._calculateCongestionLevel(matchesInNext7Days, matchesInNext14Days, daysSinceLastMatch);
+      
+      // Rotation likelihood
+      let rotationLikelihood = 'low';
+      let rotationReason = null;
+      
+      if (hasBigMatchComing && daysUntilNextMatch <= 4) {
+        rotationLikelihood = 'high';
+        rotationReason = `${nextMatchImportance.replace('_', ' ').toUpperCase()} match in ${daysUntilNextMatch} days`;
+      } else if (hasQuickTurnaround && matchesInNext7Days >= 2) {
+        rotationLikelihood = 'moderate';
+        rotationReason = `${matchesInNext7Days + 1} matches in 7 days, quick turnaround`;
+      } else if (isFatigued && hasQuickTurnaround) {
+        rotationLikelihood = 'moderate';
+        rotationReason = `Only ${daysSinceLastMatch} days rest, ${daysUntilNextMatch} days until next match`;
+      }
+      
+      return {
+        // Last match info
+        lastMatch,
+        daysSinceLastMatch,
+        
+        // Next match info
+        nextMatch,
+        daysUntilNextMatch,
+        nextMatchImportance,
+        
+        // Congestion metrics
+        matchesInNext7Days,
+        matchesInNext14Days,
+        congestionLevel,
+        
+        // Fatigue indicators
+        isFatigued,
+        hasQuickTurnaround,
+        hasBigMatchComing,
+        
+        // Rotation analysis
+        rotationLikelihood,
+        rotationReason,
+        
+        // Full upcoming schedule
+        upcomingSchedule: futureAfterMatch.slice(0, 3).map(f => ({
+          date: f.fixture.date,
+          opponent: f.teams.home.id === teamId ? f.teams.away.name : f.teams.home.name,
+          competition: f.league?.name || 'Unknown',
+          venue: f.teams.home.id === teamId ? 'Home' : 'Away'
+        }))
+      };
+    } catch (error) {
+      console.log(`   ⚠️  Error analyzing fixture congestion: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Calculate congestion level based on upcoming fixtures
+   * @private
+   */
+  _calculateCongestionLevel(matchesIn7Days, matchesIn14Days, daysSinceLastMatch) {
+    let score = 0;
+    
+    // Score based on matches in 7 days
+    if (matchesIn7Days >= 3) score += 3;
+    else if (matchesIn7Days >= 2) score += 2;
+    else if (matchesIn7Days >= 1) score += 1;
+    
+    // Score based on matches in 14 days
+    if (matchesIn14Days >= 5) score += 2;
+    else if (matchesIn14Days >= 4) score += 1;
+    
+    // Score based on recent fatigue
+    if (daysSinceLastMatch !== null && daysSinceLastMatch <= 2) score += 2;
+    else if (daysSinceLastMatch !== null && daysSinceLastMatch <= 4) score += 1;
+    
+    if (score >= 5) return 'critical';
+    if (score >= 3) return 'high';
+    if (score >= 2) return 'moderate';
+    return 'low';
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // TEAM DATA
   // ═══════════════════════════════════════════════════════════════
 
   /**
-   * Get team statistics for current season
+   * Get team statistics for current season (with caching)
    * @param {number} teamId - Team ID
    * @param {number} season - Season year
    * @param {number} leagueId - League ID
    * @returns {Promise<Object>} Team statistics
    */
   async getTeamStatistics(teamId, season, leagueId) {
+    // Check cache first
+    const cached = this.cache.getTeamStats(teamId, leagueId, season);
+    if (cached) {
+      console.log(`   💾 Team stats cache hit: Team ${teamId}`);
+      return cached;
+    }
+
     const endpoint = ENDPOINTS.teams.statistics(teamId, season, leagueId);
     const data = await this.request(endpoint);
-    return data.response || null;
+    const stats = data.response || null;
+
+    // Cache the result
+    if (stats) {
+      this.cache.setTeamStats(teamId, leagueId, season, stats);
+    }
+
+    return stats;
   }
 
   /**
@@ -264,25 +506,26 @@ class FootballAPIService {
   }
 
   /**
-   * Get current squad with league-specific stats and ratings
+   * Get current squad with league-specific stats and ratings (with caching)
    * @param {number} teamId - Team ID
    * @param {number} season - Season year
    * @param {number} leagueId - League ID (EPL, UCL, etc.)
    * @returns {Promise<Array>} Squad with league-specific stats
    */
   async getSquadWithStats(teamId, season, leagueId) {
+    // Check cache first - this is an expensive operation
+    const cached = this.cache.getSquadStats(teamId, leagueId, season);
+    if (cached) {
+      console.log(`   💾 Squad stats cache hit: Team ${teamId}`);
+      return cached;
+    }
+
     try {
       // 1. Get CURRENT squad roster (excludes transferred out)
       const squadEndpoint = `players/squads?team=${teamId}`;
       const squadData = await this.request(squadEndpoint);
       if (!squadData.response || squadData.response.length === 0) return [];
       const currentSquad = squadData.response[0]?.players || [];
-      // DEBUG: Log the entire squad received from the API
-      console.log('==== DEBUG: Full current squad from API ====');
-      currentSquad.forEach(player => {
-        console.log(`ID: ${player.id}, Name: ${player.name}, Age: ${player.age}, Number: ${player.number}, Position: ${player.position}`);
-      });
-      console.log('==== END SQUAD ====');
       const currentPlayerIds = new Set(currentSquad.map(p => Number(p.id)));
 
       // 2. Get player stats for this team/season (bulk)
@@ -299,7 +542,7 @@ class FootballAPIService {
         }
       });
 
-      // Helper to sanitize player names for API search (alphanumeric and spaces only, remove accents)
+      // Helper to sanitize player names for API search
       function sanitizePlayerName(name) {
         let sanitized = name.normalize('NFD').replace(/\p{Diacritic}/gu, '');
         sanitized = sanitized.replace(/[^a-zA-Z0-9 ]/g, '');
@@ -313,29 +556,40 @@ class FootballAPIService {
         return parts.length > 1 ? parts[parts.length - 1] : name;
       }
 
-      // 3. For any squad player missing from statsMap, fetch individually using search
-      for (const squadPlayer of currentSquad) {
-        const playerId = Number(squadPlayer.id);
-        if (!statsMap.has(playerId)) {
-          // Use surname if >= 4 chars, else use full name
+      // 3. Batch search for missing players (in groups of 3 concurrent requests)
+      const missingPlayers = currentSquad.filter(p => !statsMap.has(Number(p.id)));
+      const BATCH_SIZE = 3;
+
+      for (let i = 0; i < missingPlayers.length; i += BATCH_SIZE) {
+        const batch = missingPlayers.slice(i, i + BATCH_SIZE);
+        const searchPromises = batch.map(async (squadPlayer) => {
+          const playerId = Number(squadPlayer.id);
           let surname = sanitizePlayerName(getSurname(squadPlayer.name));
-          let searchName;
-          if (surname.length >= 4) {
-            searchName = surname;
-          } else {
-            searchName = sanitizePlayerName(squadPlayer.name);
-          }
-          if (!searchName) continue;
-          const searchEndpoint = `players?team=${teamId}&search=${encodeURIComponent(searchName)}&season=${season}`;
-          const searchData = await this.request(searchEndpoint);
-          const found = (searchData.response || []).find(p => Number(p.player.id) === playerId);
-          if (found) {
-            const leagueStats = (found.statistics || []).find(stat => stat.league?.id === leagueId);
-            if (leagueStats) {
-              statsMap.set(playerId, leagueStats);
+          let searchName = surname.length >= 4 ? surname : sanitizePlayerName(squadPlayer.name);
+          if (!searchName) return null;
+
+          try {
+            const searchEndpoint = `players?team=${teamId}&search=${encodeURIComponent(searchName)}&season=${season}`;
+            const searchData = await this.request(searchEndpoint);
+            const found = (searchData.response || []).find(p => Number(p.player.id) === playerId);
+            if (found) {
+              const leagueStats = (found.statistics || []).find(stat => stat.league?.id === leagueId);
+              if (leagueStats) {
+                return { playerId, stats: leagueStats };
+              }
             }
+          } catch (err) {
+            // Silently fail individual player searches
           }
-        }
+          return null;
+        });
+
+        const results = await Promise.all(searchPromises);
+        results.forEach(result => {
+          if (result) {
+            statsMap.set(result.playerId, result.stats);
+          }
+        });
       }
 
       // 4. Merge squad with league-specific stats
@@ -372,8 +626,15 @@ class FootballAPIService {
           hasStats: !!stat
         };
       }).filter(p => p.lineups > 0 || p.appearances > 1);
+
+      // Cache the result
+      if (squadWithStats.length > 0) {
+        this.cache.setSquadStats(teamId, leagueId, season, squadWithStats);
+      }
+
       return squadWithStats;
     } catch (error) {
+      console.error(`   ❌ Squad stats error: ${error.message}`);
       return [];
     }
   }
@@ -567,6 +828,14 @@ class FootballAPIService {
       const processedHomeRecent = this._processRecentMatches(homeRecentMatches, homeTeamId);
       const processedAwayRecent = this._processRecentMatches(awayRecentMatches, awayTeamId);
 
+      // Fetch fixture congestion analysis for both teams
+      console.log(`   📅 Batch 4/4: Fixture congestion analysis...`);
+      const matchDate = fixture.fixture.date;
+      const [homeCongestion, awayCongestion] = await Promise.all([
+        this.analyzeFixtureCongestion(homeTeamId, matchDate, processedHomeRecent.matches || processedHomeRecent),
+        this.analyzeFixtureCongestion(awayTeamId, matchDate, processedAwayRecent.matches || processedAwayRecent)
+      ]);
+
       const matchData = {
         // Team Statistics
         homeStats: this._extractTeamStats(homeStats),
@@ -601,6 +870,12 @@ class FootballAPIService {
         lastLineup: {
           homePlayers: homeLastXI,
           awayPlayers: awayLastXI
+        },
+
+        // Fixture congestion / fatigue analysis
+        fixtureCongestion: {
+          home: homeCongestion,
+          away: awayCongestion
         },
 
         // Metadata

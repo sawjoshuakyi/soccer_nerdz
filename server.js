@@ -13,6 +13,7 @@ require('dotenv').config();
 // Import services
 const cache = require('./cache-simple'); // Keep existing cache for now
 const PredictionOrchestrator = require('./services/prediction-orchestrator.service');
+const oddsApi = require('./services/odds-api.service');
 const { LEAGUES, CURRENT_SEASON, API_CONFIG } = require('./config/constants');
 
 // Initialize
@@ -270,6 +271,31 @@ app.get('/api/match-data/:fixtureId', (req, res) => {
   }
 
   res.json(matchData);
+});
+
+/**
+ * GET /api/odds/:homeTeam/:awayTeam
+ * Get betting odds from multiple bookmakers for a fixture
+ */
+app.get('/api/odds/:homeTeam/:awayTeam', async (req, res) => {
+  try {
+    const { homeTeam, awayTeam } = req.params;
+    const league = req.query.league || 'epl';
+    
+    const odds = await oddsApi.getFixtureOdds(
+      decodeURIComponent(homeTeam),
+      decodeURIComponent(awayTeam),
+      league
+    );
+    
+    res.json(odds);
+  } catch (error) {
+    console.error('[API] Error fetching odds:', error.message);
+    res.status(500).json({
+      error: 'Failed to fetch odds',
+      message: error.message
+    });
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════

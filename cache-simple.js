@@ -7,12 +7,16 @@ if (!fs.existsSync(cacheDir)) {
   fs.mkdirSync(cacheDir, { recursive: true });
 }
 
-// Cache TTL in milliseconds
+// Cache TTL in milliseconds - Optimized for API efficiency
 const TTL = {
-  FIXTURES: 60 * 60 * 1000,        // 1 hour
-  MATCH_DATA: 6 * 60 * 60 * 1000,  // 6 hours
-  PREDICTIONS: 7 * 24 * 60 * 60 * 1000,  // 7 days
-  LEAGUE_STATS: 12 * 60 * 60 * 1000  // 12 hours
+  FIXTURES: 30 * 60 * 1000,        // 30 minutes - fixtures change rarely
+  MATCH_DATA: 4 * 60 * 60 * 1000,  // 4 hours - team data relatively stable
+  PREDICTIONS: 24 * 60 * 60 * 1000,  // 24 hours - predictions valid until match
+  LEAGUE_STATS: 24 * 60 * 60 * 1000,  // 24 hours - league stats stable
+  TEAM_STATS: 24 * 60 * 60 * 1000,   // 24 hours - team season statistics
+  SQUAD_STATS: 24 * 60 * 60 * 1000,  // 24 hours - squad with player stats
+  RECENT_MATCHES: 4 * 60 * 60 * 1000, // 4 hours - team recent matches
+  H2H: 24 * 60 * 60 * 1000           // 24 hours - head-to-head history
 };
 
 // Helper to read cache file
@@ -113,6 +117,65 @@ function setLeagueStats(leagueKey, stats) {
 }
 
 // =====================================================
+// TEAM STATS CACHE (Season statistics per team)
+// =====================================================
+
+function getTeamStats(teamId, leagueId, season) {
+  const filename = `teamstats_${teamId}_${leagueId}_${season}.json`;
+  return readCacheFile(filename);
+}
+
+function setTeamStats(teamId, leagueId, season, stats) {
+  const filename = `teamstats_${teamId}_${leagueId}_${season}.json`;
+  writeCacheFile(filename, stats, TTL.TEAM_STATS);
+}
+
+// =====================================================
+// SQUAD STATS CACHE (Squad with player ratings/stats)
+// =====================================================
+
+function getSquadStats(teamId, leagueId, season) {
+  const filename = `squadstats_${teamId}_${leagueId}_${season}.json`;
+  return readCacheFile(filename);
+}
+
+function setSquadStats(teamId, leagueId, season, squad) {
+  const filename = `squadstats_${teamId}_${leagueId}_${season}.json`;
+  writeCacheFile(filename, squad, TTL.SQUAD_STATS);
+}
+
+// =====================================================
+// RECENT MATCHES CACHE (Last N matches for a team)
+// =====================================================
+
+function getRecentMatches(teamId, season) {
+  const filename = `recentmatches_${teamId}_${season}.json`;
+  return readCacheFile(filename);
+}
+
+function setRecentMatches(teamId, season, matches) {
+  const filename = `recentmatches_${teamId}_${season}.json`;
+  writeCacheFile(filename, matches, TTL.RECENT_MATCHES);
+}
+
+// =====================================================
+// HEAD-TO-HEAD CACHE
+// =====================================================
+
+function getH2H(homeId, awayId) {
+  // Sort IDs to ensure consistent key regardless of home/away order
+  const key = [homeId, awayId].sort((a, b) => a - b).join('_');
+  const filename = `h2h_${key}.json`;
+  return readCacheFile(filename);
+}
+
+function setH2H(homeId, awayId, h2hData) {
+  const key = [homeId, awayId].sort((a, b) => a - b).join('_');
+  const filename = `h2h_${key}.json`;
+  writeCacheFile(filename, h2hData, TTL.H2H);
+}
+
+// =====================================================
 // API CALL LOGGING
 // =====================================================
 
@@ -155,6 +218,10 @@ function getStats() {
     const matchDataCount = files.filter(f => f.startsWith('matchdata_')).length;
     const predictionsCount = files.filter(f => f.startsWith('prediction_')).length;
     const leagueStatsCount = files.filter(f => f.startsWith('leaguestats_')).length;
+    const teamStatsCount = files.filter(f => f.startsWith('teamstats_')).length;
+    const squadStatsCount = files.filter(f => f.startsWith('squadstats_')).length;
+    const recentMatchesCount = files.filter(f => f.startsWith('recentmatches_')).length;
+    const h2hCount = files.filter(f => f.startsWith('h2h_')).length;
     
     // Read API logs
     const logFile = path.join(cacheDir, 'api_logs.json');
@@ -180,13 +247,17 @@ function getStats() {
         fixtures: fixturesCount,
         matchData: matchDataCount,
         predictions: predictionsCount,
-        leagueStats: leagueStatsCount
+        leagueStats: leagueStatsCount,
+        teamStats: teamStatsCount,
+        squadStats: squadStatsCount,
+        recentMatches: recentMatchesCount,
+        h2h: h2hCount
       },
       apiCalls24h
     };
   } catch (error) {
     return {
-      cache: { fixtures: 0, matchData: 0, predictions: 0, leagueStats: 0 },
+      cache: { fixtures: 0, matchData: 0, predictions: 0, leagueStats: 0, teamStats: 0, squadStats: 0, recentMatches: 0, h2h: 0 },
       apiCalls24h: { total: 0, cached: 0, successful: 0, cacheHitRate: '0%' }
     };
   }
@@ -248,14 +319,31 @@ function cleanupExpired() {
 setInterval(cleanupExpired, 60 * 60 * 1000);
 
 module.exports = {
+  // Fixtures
   getFixtures,
   setFixtures,
+  // Match data
   getMatchData,
   setMatchData,
+  // Predictions
   getPrediction,
   setPrediction,
+  // League stats
   getLeagueStats,
   setLeagueStats,
+  // Team stats (NEW)
+  getTeamStats,
+  setTeamStats,
+  // Squad stats (NEW)
+  getSquadStats,
+  setSquadStats,
+  // Recent matches (NEW)
+  getRecentMatches,
+  setRecentMatches,
+  // Head-to-head (NEW)
+  getH2H,
+  setH2H,
+  // Utilities
   logAPICall,
   getStats,
   clearAllCache,
