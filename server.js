@@ -256,6 +256,62 @@ app.get('/api/predictions/:fixtureId', (req, res) => {
 });
 
 /**
+ * POST /api/predictions/:fixtureId/generate
+ * Generate prediction on-demand for a specific fixture
+ */
+app.post('/api/predictions/:fixtureId/generate', async (req, res) => {
+  const { fixtureId } = req.params;
+  const parsedFixtureId = parseInt(fixtureId);
+
+  // Check if prediction already exists
+  const existing = orchestrator.getPrediction(parsedFixtureId);
+  if (existing) {
+    return res.json(existing);
+  }
+
+  try {
+    console.log(`[API] On-demand prediction requested for fixture ${parsedFixtureId}`);
+    
+    // Find the fixture in cache
+    const allFixtures = [];
+    const leagues = ['epl', 'laliga', 'bundesliga', 'seriea', 'ligue1', 'ucl', 'europa'];
+    
+    for (const league of leagues) {
+      const fixtures = cache.getFixtures(league) || [];
+      allFixtures.push(...fixtures);
+    }
+    
+    const fixture = allFixtures.find(f => f.fixture.id === parsedFixtureId);
+    
+    if (!fixture) {
+      return res.status(404).json({
+        error: 'Fixture not found',
+        message: 'Cannot find fixture data for this match'
+      });
+    }
+
+    // Generate prediction
+    const prediction = await orchestrator.generatePrediction(fixture);
+    
+    if (prediction) {
+      console.log(`[API] Successfully generated prediction for fixture ${parsedFixtureId}`);
+      res.json(prediction);
+    } else {
+      res.status(500).json({
+        error: 'Generation failed',
+        message: 'Failed to generate prediction for this fixture'
+      });
+    }
+  } catch (error) {
+    console.error(`[API] Error generating prediction:`, error.message);
+    res.status(500).json({
+      error: 'Generation failed',
+      message: error.message
+    });
+  }
+});
+
+/**
  * GET /api/match-data/:fixtureId
  * Get comprehensive match data including squad stats
  */
@@ -293,6 +349,41 @@ app.get('/api/odds/:homeTeam/:awayTeam', async (req, res) => {
     console.error('[API] Error fetching odds:', error.message);
     res.status(500).json({
       error: 'Failed to fetch odds',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/league-stats/:league
+ * Get league statistics and averages
+ */
+app.get('/api/league-stats/:league', async (req, res) => {
+  const { league } = req.params;
+  
+  try {
+    // Check cache first
+    const cached = cache.getLeagueStats(league);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    // Fetch fresh stats
+    const leagueStatsService = require('./services/league-stats.service');
+    const stats = await leagueStatsService.getLeagueStats(league);
+    
+    if (stats) {
+      res.json(stats);
+    } else {
+      res.status(404).json({
+        error: 'League stats not found',
+        message: `No statistics available for ${league}`
+      });
+    }
+  } catch (error) {
+    console.error(`[API] Error fetching league stats:`, error.message);
+    res.status(500).json({
+      error: 'Failed to fetch league stats',
       message: error.message
     });
   }

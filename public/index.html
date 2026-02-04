@@ -263,14 +263,53 @@
             padding: var(--spacing-md);
         }
 
+        .league-nav-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            transition: background 0.15s ease;
+        }
+
+        .league-nav-header:hover {
+            background: var(--bg-accent);
+        }
+
         .league-nav-title {
             font-size: 0.65rem;
             text-transform: uppercase;
             letter-spacing: 1.5px;
             color: var(--text-muted);
-            margin-bottom: var(--spacing-sm);
-            padding: 0 var(--spacing-sm);
             font-weight: 600;
+        }
+
+        .league-nav-toggle {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .league-nav.collapsed .league-nav-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .league-nav-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-top: var(--spacing-sm);
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.2s ease;
+            max-height: 500px;
+            opacity: 1;
+        }
+
+        .league-nav.collapsed .league-nav-list {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
         }
 
         .league-btn {
@@ -445,6 +484,39 @@
             background: currentColor;
         }
 
+        /* Fixture Mini Stats */
+        .fixture-mini-stats {
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+            margin-top: var(--spacing-sm);
+            padding: var(--spacing-xs) 0;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .mini-stat {
+            flex: 1;
+            text-align: center;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 2px 4px;
+            border-radius: 3px;
+            background: var(--bg-accent);
+        }
+
+        .mini-stat.home {
+            color: var(--home-color);
+        }
+
+        .mini-stat.draw {
+            color: var(--draw-color);
+        }
+
+        .mini-stat.away {
+            color: var(--text-primary);
+        }
+
         /* Main Content */
         .main-content {
             padding: var(--spacing-xl);
@@ -607,6 +679,27 @@
             color: var(--text-muted);
             margin-bottom: var(--spacing-sm);
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .kpi-info {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            background: var(--bg-accent);
+            border-radius: 50%;
+            font-size: 0.55rem;
+            cursor: help;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .kpi-info:hover {
+            opacity: 1;
         }
 
         .kpi-value {
@@ -624,6 +717,42 @@
             font-size: 0.7rem;
             color: var(--text-muted);
             margin-top: var(--spacing-xs);
+        }
+
+        /* Tooltip Styles */
+        [data-tooltip] {
+            position: relative;
+        }
+
+        [data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 10px;
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            font-size: 0.7rem;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+            white-space: nowrap;
+            border-radius: 4px;
+            z-index: 100;
+            pointer-events: none;
+            margin-bottom: 4px;
+        }
+
+        [data-tooltip]:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: var(--text-primary);
+            z-index: 100;
         }
 
         /* Dashboard Grid */
@@ -785,13 +914,16 @@
         .xg-comparison {
             display: flex;
             align-items: stretch;
-            gap: var(--spacing-lg);
+            justify-content: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-sm);
         }
 
         .xg-team {
             flex: 1;
+            max-width: 140px;
             text-align: center;
-            padding: var(--spacing-lg);
+            padding: var(--spacing-md);
             background: var(--bg-accent);
             border-radius: var(--radius-md);
         }
@@ -819,7 +951,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            flex-shrink: 0;
         }
 
         .xg-delta-label {
@@ -1155,24 +1288,25 @@
         }
 
         .calc-breakdown {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--spacing-md);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
             margin-top: var(--spacing-md);
         }
 
         .calc-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             background: var(--bg-accent);
             padding: var(--spacing-md);
             border-radius: var(--radius-sm);
         }
 
         .calc-item-label {
-            font-size: 0.6rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
         .calc-item-formula {
@@ -1787,6 +1921,1910 @@
 
         .fun-fact.neutral {
             border-left-color: var(--draw-color);
+        }
+
+        /* Player Analysis Section */
+        .player-analysis-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xl);
+        }
+
+        .player-analysis-tabs {
+            display: flex;
+            gap: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: var(--spacing-md);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .player-tab-btn {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .player-tab-btn:hover {
+            background: var(--bg-accent);
+            color: var(--text-primary);
+        }
+
+        .player-tab-btn.active {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+        }
+
+        .player-teams-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-xl);
+        }
+
+        @media (max-width: 768px) {
+            .player-teams-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .player-team-section {
+            background: var(--bg-accent);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+        }
+
+        .player-team-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .player-team-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+
+        .player-team-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        /* Shot Map Visualization */
+        .shot-map-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1.5;
+            background: linear-gradient(180deg, 
+                rgba(34, 197, 94, 0.05) 0%, 
+                rgba(34, 197, 94, 0.02) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .shot-map-pitch {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .shot-map-goal {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30%;
+            height: 8%;
+            border: 2px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .shot-map-box {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 25%;
+            border: 1px solid var(--border-color);
+            border-top: none;
+        }
+
+        .shot-map-6yard {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 35%;
+            height: 12%;
+            border: 1px solid var(--border-color);
+            border-top: none;
+        }
+
+        .shot-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .shot-marker:hover {
+            transform: translate(-50%, -50%) scale(1.3);
+            z-index: 20;
+        }
+
+        .shot-marker.goal {
+            background: var(--accent-success);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+        }
+
+        .shot-marker.on-target {
+            background: var(--accent-warning);
+            box-shadow: 0 0 6px rgba(251, 191, 36, 0.4);
+        }
+
+        .shot-marker.off-target {
+            background: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        .shot-map-legend {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-sm);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.goal { background: var(--accent-success); }
+        .legend-dot.on-target { background: var(--accent-warning); }
+        .legend-dot.off-target { background: var(--text-muted); opacity: 0.6; }
+
+        /* Player Stats Cards */
+        .player-stats-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .player-stat-card {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .player-stat-card:hover {
+            border-color: var(--text-muted);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .player-photo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--bg-accent);
+        }
+
+        .player-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .player-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-position {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .player-metrics {
+            display: flex;
+            gap: var(--spacing-md);
+        }
+
+        .player-metric {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            min-width: 45px;
+        }
+
+        .player-metric-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .player-metric-label {
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* xG Bar Chart for Players */
+        .player-xg-bar {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-xs);
+        }
+
+        .xg-bar-track {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-accent);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .xg-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--home-color), var(--accent-success));
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .xg-bar-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 35px;
+            text-align: right;
+        }
+
+        /* Shot Efficiency Heatmap */
+        .efficiency-heatmap {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+        }
+
+        .heatmap-cell {
+            padding: var(--spacing-md);
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .heatmap-cell::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0.15;
+            z-index: 0;
+        }
+
+        .heatmap-cell.low::before { background: var(--accent-danger); }
+        .heatmap-cell.medium::before { background: var(--accent-warning); }
+        .heatmap-cell.high::before { background: var(--accent-success); }
+
+        .heatmap-cell-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            position: relative;
+            z-index: 1;
+        }
+
+        .heatmap-cell-label {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            z-index: 1;
+            margin-top: 2px;
+        }
+
+        /* Player Comparison */
+        .player-comparison-row {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-sm) 0;
+        }
+
+        .comparison-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            width: 80px;
+            flex-shrink: 0;
+        }
+
+        .comparison-bars {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .comparison-bar-home {
+            height: 8px;
+            background: var(--home-color);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .comparison-bar-away {
+            height: 8px;
+            background: var(--text-primary);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .comparison-values {
+            display: flex;
+            justify-content: space-between;
+            width: 70px;
+            flex-shrink: 0;
+        }
+
+        .comparison-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .comparison-value.home { color: var(--home-color); }
+        .comparison-value.away { color: var(--text-primary); }
+
+        /* Analysis Tab System */
+        .analysis-tab {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .analysis-tab:hover {
+            background: var(--bg-accent);
+            color: var(--text-primary);
+            border-color: var(--text-muted);
+        }
+
+        .analysis-tab.active {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border-color: var(--text-primary);
+        }
+
+        .tab-icon {
+            font-size: 1rem;
+        }
+
+        .analysis-tab-content {
+            display: none;
+        }
+
+        .analysis-tab-content.active {
+            display: block;
+        }
+
+        /* Player Comparison Header */
+        .player-comparison-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xl);
+            padding: var(--spacing-lg);
+            background: var(--bg-accent);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .comparison-team {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .comparison-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .comparison-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        .comparison-vs {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: var(--spacing-xs) var(--spacing-md);
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+        }
+
+        /* Shot Maps Grid */
+        .shot-maps-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-xl);
+        }
+
+        @media (max-width: 768px) {
+            .shot-maps-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .shot-map-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .shot-map-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+            text-align: center;
+        }
+
+        /* Pitch Visualization */
+        .shot-map-pitch {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, 
+                rgba(34, 197, 94, 0.08) 0%, 
+                rgba(34, 197, 94, 0.03) 100%);
+        }
+
+        .pitch-center-circle {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30%;
+            height: 15%;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-bottom: none;
+            border-radius: 50% 50% 0 0;
+        }
+
+        .pitch-center-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(34, 197, 94, 0.3);
+        }
+
+        .pitch-penalty-box {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 55%;
+            height: 30%;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .pitch-penalty-box.top {
+            top: 0;
+            border-top: none;
+        }
+
+        .pitch-goal-box {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 28%;
+            height: 12%;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .pitch-goal-box.top {
+            top: 0;
+            border-top: none;
+        }
+
+        .pitch-penalty-spot {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: rgba(34, 197, 94, 0.4);
+            border-radius: 50%;
+        }
+
+        .pitch-penalty-spot.top {
+            top: 22%;
+        }
+
+        /* Shot Markers Enhanced */
+        .shot-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .shot-marker-goal {
+            background: var(--accent-success);
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+        }
+
+        .shot-marker-on {
+            background: var(--accent-warning);
+            box-shadow: 0 0 8px rgba(217, 119, 6, 0.5);
+        }
+
+        .shot-marker-miss {
+            background: var(--text-muted);
+            opacity: 0.7;
+        }
+
+        .shot-marker-label {
+            font-size: 0.55rem;
+        }
+
+        /* Shot Map Stats */
+        .shot-map-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .map-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .map-stat-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .map-stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* xG Analysis Section */
+        .xg-comparison-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xl);
+        }
+
+        .xg-summary-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xl);
+        }
+
+        .xg-team-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-lg);
+            background: var(--bg-accent);
+            border-radius: var(--radius-lg);
+            min-width: 150px;
+        }
+
+        .xg-team-box.home {
+            border-left: 3px solid var(--home-color);
+        }
+
+        .xg-team-box.away {
+            border-left: 3px solid var(--away-color);
+        }
+
+        .xg-team-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .xg-team-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .xg-team-sublabel {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .xg-vs-divider {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .xg-diff {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--radius-sm);
+            background: var(--bg-card);
+        }
+
+        .xg-diff.home-favor {
+            color: var(--home-color);
+        }
+
+        .xg-diff.away-favor {
+            color: var(--away-color);
+        }
+
+        /* xG vs Goals Comparison */
+        .xg-goals-comparison {
+            padding: var(--spacing-lg);
+            background: var(--bg-accent);
+            border-radius: var(--radius-lg);
+        }
+
+        .comparison-subtitle {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-lg);
+            text-align: center;
+        }
+
+        .xg-goals-bars {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-xl);
+        }
+
+        @media (max-width: 768px) {
+            .xg-goals-bars {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .xg-goals-team {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .xg-goals-team .team-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .dual-bar-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .bar-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            width: 40px;
+            flex-shrink: 0;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 12px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        .bar-fill.xg {
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+        }
+
+        .bar-fill.goals {
+            background: var(--accent-success);
+        }
+
+        .bar-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 30px;
+            text-align: right;
+        }
+
+        .performance-indicator {
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            text-align: center;
+        }
+
+        .performance-indicator.overperform {
+            color: var(--accent-success);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .performance-indicator.underperform {
+            color: var(--accent-danger);
+            background: rgba(220, 38, 38, 0.1);
+        }
+
+        .performance-indicator.neutral {
+            color: var(--text-muted);
+            background: var(--bg-card);
+        }
+
+        /* xG Players Section */
+        .xg-players-section {
+            padding: var(--spacing-lg);
+            background: var(--bg-accent);
+            border-radius: var(--radius-lg);
+        }
+
+        .xg-players-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-xl);
+        }
+
+        @media (max-width: 768px) {
+            .xg-players-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .xg-players-team {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .xg-player-row {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm);
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+        }
+
+        .xg-player-rank {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            width: 20px;
+            text-align: center;
+        }
+
+        .xg-player-photo {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--bg-accent);
+        }
+
+        .xg-player-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .xg-player-bar-container {
+            width: 60px;
+            height: 6px;
+            background: var(--bg-accent);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .xg-player-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .xg-player-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 35px;
+            text-align: right;
+        }
+
+        /* Player Stats Cards Enhanced */
+        .team-section-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .team-title-logo {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+
+        .player-stat-card {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            padding: var(--spacing-lg);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            transition: all 0.2s ease;
+        }
+
+        .player-stat-card:hover {
+            border-color: var(--text-muted);
+            box-shadow: var(--shadow-md);
+        }
+
+        .player-card-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .player-card-photo {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--bg-accent);
+            border: 2px solid var(--border-color);
+        }
+
+        .player-card-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .player-card-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .player-card-position {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .player-card-number {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .player-card-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-sm);
+        }
+
+        .player-stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: var(--spacing-sm);
+            background: var(--bg-accent);
+            border-radius: var(--radius-sm);
+        }
+
+        .player-stat-item .stat-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .player-stat-item .stat-value.goals {
+            color: var(--accent-success);
+        }
+
+        .player-stat-item .stat-value.assists {
+            color: var(--home-color);
+        }
+
+        .player-stat-item .stat-label {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .player-xg-bar {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .xg-bar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .xg-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .xg-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .player-efficiency {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: var(--spacing-sm);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .efficiency-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .efficiency-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* Empty State */
+        .player-analysis-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-2xl);
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .player-analysis-empty .empty-icon {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+
+        .player-analysis-empty p {
+            font-size: 0.9rem;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .player-analysis-empty .empty-subtitle {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .no-data {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-align: center;
+            padding: var(--spacing-lg);
+        }
+
+        /* Starters Analysis Styles */
+        .starters-summary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xl);
+            padding: var(--spacing-lg);
+            background: var(--bg-accent);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+
+        .summary-team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-sm);
+            min-width: 150px;
+        }
+
+        .summary-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .summary-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .summary-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            justify-content: center;
+        }
+
+        .summary-stat {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+        }
+
+        .summary-stat strong {
+            color: var(--text-primary);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .summary-vs {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+        }
+
+        .starters-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-xl);
+        }
+
+        @media (max-width: 900px) {
+            .starters-grid {
+                grid-template-columns: 1fr;
+            }
+            .starters-summary {
+                flex-direction: column;
+            }
+        }
+
+        .starters-team {
+            background: var(--bg-accent);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+        }
+
+        .starters-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .starters-logo {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+
+        .starters-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .starter-position-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .position-header {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            display: inline-flex;
+            align-self: flex-start;
+        }
+
+        .starter-players {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .starter-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            transition: all 0.15s ease;
+        }
+
+        .starter-row:hover {
+            border-color: var(--text-muted);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .starter-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            flex: 1;
+            min-width: 0;
+        }
+
+        .starter-photo {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--bg-accent);
+            flex-shrink: 0;
+        }
+
+        .starter-details {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 0;
+        }
+
+        .starter-name {
+            font-weight: 500;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .starter-number {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .starter-stats {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-shrink: 0;
+        }
+
+        .starter-stat {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 2px 6px;
+            background: var(--bg-accent);
+            border-radius: var(--radius-sm);
+        }
+
+        .starter-stat .stat-icon {
+            font-size: 0.65rem;
+        }
+
+        .starter-stat .stat-val {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .starter-stat .stat-val.highlight-green {
+            color: var(--accent-success);
+            font-weight: 600;
+        }
+
+        .starter-stat .stat-val.highlight-blue {
+            color: var(--home-color);
+            font-weight: 600;
+        }
+
+        @media (max-width: 600px) {
+            .starter-stats {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .starter-stat {
+                padding: 2px 4px;
+            }
+            .starter-stat .stat-icon {
+                font-size: 0.55rem;
+            }
+            .starter-stat .stat-val {
+                font-size: 0.6rem;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           Player Analysis Styles - Redesigned
+           ═══════════════════════════════════════════════════════════════ */
+        .player-analysis-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xl);
+        }
+
+        .analysis-intro {
+            padding: var(--spacing-md);
+            background: var(--bg-accent);
+            border-radius: var(--radius-md);
+            border-left: 3px solid var(--accent-success);
+        }
+
+        .analysis-intro p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .teams-analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-xl);
+        }
+
+        @media (max-width: 1200px) {
+            .teams-analysis-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .team-analysis-section {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        .team-analysis-section.home {
+            border-top: 3px solid var(--home-color);
+        }
+
+        .team-analysis-section.away {
+            border-top: 3px solid var(--away-color);
+        }
+
+        .team-analysis-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .analysis-team-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .analysis-team-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .analysis-subsection {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .analysis-subsection:last-child {
+            margin-bottom: 0;
+        }
+
+        .subsection-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .subsection-icon {
+            font-size: 1rem;
+        }
+
+        /* Injuries Section */
+        .injuries-section {
+            background: var(--bg-card);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .injuries-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .injury-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--bg-accent);
+            border-radius: var(--radius-sm);
+        }
+
+        .injury-player {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--accent-danger);
+        }
+
+        .injury-reason {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .no-injuries {
+            font-size: 0.8rem;
+            color: var(--accent-success);
+        }
+
+        /* Attacker Cards Grid */
+        .attackers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        @media (max-width: 640px) {
+            .attackers-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Attacker Card */
+        .attacker-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .attacker-card:hover {
+            border-color: var(--text-muted);
+            box-shadow: var(--shadow-md);
+        }
+
+        .attacker-card.home {
+            border-top: 3px solid var(--home-color);
+        }
+
+        .attacker-card.away {
+            border-top: 3px solid var(--away-color);
+        }
+
+        .attacker-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .attacker-photo {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--bg-accent);
+            flex-shrink: 0;
+        }
+
+        .attacker-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .attacker-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .attacker-position {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .playstyle-badge {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: var(--bg-accent);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .playstyle-icon {
+            font-size: 0.9rem;
+        }
+
+        .playstyle-name {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* Shooting Stats */
+        .shooting-stats {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--bg-accent);
+            border-radius: var(--radius-md);
+        }
+
+        .shooting-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-bar-container {
+            height: 6px;
+            background: var(--bg-secondary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .stat-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .stat-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Stats Section */
+        .stats-section {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .stats-section-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+            padding-bottom: var(--spacing-xs);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Season Numbers */
+        .season-numbers {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-xs);
+            text-align: center;
+        }
+
+        .season-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: var(--spacing-sm);
+            background: var(--bg-accent);
+            border-radius: var(--radius-sm);
+        }
+
+        .season-val {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .season-label {
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        @media (max-width: 480px) {
+            .attacker-header {
+                flex-wrap: wrap;
+            }
+            .playstyle-badge {
+                width: 100%;
+                justify-content: center;
+                margin-top: var(--spacing-xs);
+            }
+            .season-numbers {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Creative Players Section */
+        .creators-row {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .creator-card {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .creator-photo {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--bg-accent);
+        }
+
+        .creator-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .creator-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .creator-stats {
+            display: flex;
+            gap: var(--spacing-md);
+        }
+
+        .creator-stat {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            padding: 2px 6px;
+            background: var(--bg-accent);
+            border-radius: var(--radius-sm);
+        }
+
+        /* Set Piece Threats Section */
+        .setpiece-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .setpiece-player {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .setpiece-name {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        .setpiece-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .setpiece-tag {
+            font-size: 0.6rem;
+            font-weight: 500;
+            padding: 2px 6px;
+            background: var(--bg-accent);
+            color: var(--text-secondary);
+            border-radius: var(--radius-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .setpiece-tag.aerial {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--home-color);
+        }
+
+        .setpiece-tag.freekick {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--accent-warning);
+        }
+
+        /* Injury Report Section */
+        .injury-report-section {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-color);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .injury-report-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .injury-report-content.all-clear {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            background: rgba(22, 163, 74, 0.08);
+            border-radius: var(--radius-md);
+            color: var(--accent-success);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .all-clear-icon {
+            font-size: 1rem;
+        }
+
+        .injury-report-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-lg);
+        }
+
+        @media (max-width: 600px) {
+            .injury-report-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .injury-team-column {
+            background: var(--bg-accent);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+        }
+
+        .injury-team-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding-bottom: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        .injury-team-logo {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+        }
+
+        .injuries-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .injury-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+        }
+
+        .injury-player {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .injury-reason {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+        }
+
+        .no-injuries {
+            font-size: 0.8rem;
+            color: var(--accent-success);
+            padding: var(--spacing-xs);
         }
 
         /* Fixture Congestion */
@@ -2439,6 +4477,393 @@
             font-weight: 600;
             color: var(--text-primary);
         }
+
+        /* Pending Analysis Banner */
+        .pending-analysis-banner {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-lg);
+            padding: var(--spacing-lg);
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-accent) 100%);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--accent-warning);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .pending-icon {
+            font-size: 2rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        .pending-content {
+            flex: 1;
+        }
+
+        .pending-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .pending-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .generate-btn {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .generate-btn:active {
+            transform: translateY(0);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Skeleton Preview */
+        .skeleton-preview {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .skeleton-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .skeleton-icon {
+            opacity: 0.6;
+        }
+
+        .skeleton-grid {
+            opacity: 0.6;
+        }
+
+        .skeleton-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skeleton-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .skeleton-value {
+            color: var(--text-muted) !important;
+        }
+
+        .skeleton-bar {
+            height: 4px;
+            background: var(--bg-accent);
+            border-radius: 2px;
+            margin-top: var(--spacing-sm);
+            overflow: hidden;
+        }
+
+        .skeleton-bar::after {
+            content: '';
+            display: block;
+            width: 60%;
+            height: 100%;
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-lg);
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--text-muted);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .feature-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .feature-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Dashboard Overview */
+        .dashboard-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .overview-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            text-align: center;
+        }
+
+        .overview-icon {
+            font-size: 1.5rem;
+            margin-bottom: var(--spacing-sm);
+            opacity: 0.7;
+        }
+
+        .overview-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .overview-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: var(--spacing-xs);
+        }
+
+        /* Welcome Dashboard */
+        .welcome-dashboard {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .welcome-header {
+            text-align: center;
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .welcome-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .welcome-subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .welcome-features {
+            margin: var(--spacing-2xl) 0;
+        }
+
+        .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .welcome-cta {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-xl);
+            background: var(--bg-card);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            margin-top: var(--spacing-2xl);
+        }
+
+        .cta-icon {
+            font-size: 1.5rem;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-5px); }
+        }
+
+        .cta-text {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* League Averages Section */
+        .league-averages-section {
+            margin-top: var(--spacing-2xl);
+            padding-top: var(--spacing-xl);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .league-averages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .league-avg-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .league-avg-card:hover {
+            border-color: var(--text-muted);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .league-avg-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .league-avg-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: var(--spacing-xs);
+        }
+
+        .league-avg-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-xl);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            grid-column: 1 / -1;
+        }
+
+        /* No Data Message */
+        .no-data-message {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--text-muted);
+        }
+
+        .no-data-icon {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+
+        .no-data-text {
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .welcome-title {
+                font-size: 1.5rem;
+            }
+
+            .welcome-subtitle {
+                font-size: 0.9rem;
+            }
+
+            .pending-analysis-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .generate-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -2477,36 +4902,41 @@
                 </div>
             </div>
 
-            <nav class="league-nav">
-                <div class="league-nav-title">Competitions</div>
-                <button class="league-btn active" data-league="epl">
-                    <span class="league-btn-emoji">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span>
-                    <span>Premier League</span>
-                </button>
-                <button class="league-btn" data-league="laliga">
-                    <span class="league-btn-emoji">🇪🇸</span>
-                    <span>La Liga</span>
-                </button>
-                <button class="league-btn" data-league="bundesliga">
-                    <span class="league-btn-emoji">🇩🇪</span>
-                    <span>Bundesliga</span>
-                </button>
-                <button class="league-btn" data-league="seriea">
-                    <span class="league-btn-emoji">🇮🇹</span>
-                    <span>Serie A</span>
-                </button>
-                <button class="league-btn" data-league="ligue1">
-                    <span class="league-btn-emoji">🇫🇷</span>
-                    <span>Ligue 1</span>
-                </button>
-                <button class="league-btn" data-league="ucl">
-                    <span class="league-btn-emoji">⭐</span>
-                    <span>Champions League</span>
-                </button>
-                <button class="league-btn" data-league="europa">
-                    <span class="league-btn-emoji">🏆</span>
-                    <span>Europa League</span>
-                </button>
+            <nav class="league-nav" id="league-nav">
+                <div class="league-nav-header" onclick="toggleLeagueNav()">
+                    <div class="league-nav-title">Competitions</div>
+                    <span class="league-nav-toggle">▼</span>
+                </div>
+                <div class="league-nav-list">
+                    <button class="league-btn active" data-league="epl">
+                        <span class="league-btn-emoji">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span>
+                        <span>Premier League</span>
+                    </button>
+                    <button class="league-btn" data-league="laliga">
+                        <span class="league-btn-emoji">🇪🇸</span>
+                        <span>La Liga</span>
+                    </button>
+                    <button class="league-btn" data-league="bundesliga">
+                        <span class="league-btn-emoji">🇩🇪</span>
+                        <span>Bundesliga</span>
+                    </button>
+                    <button class="league-btn" data-league="seriea">
+                        <span class="league-btn-emoji">🇮🇹</span>
+                        <span>Serie A</span>
+                    </button>
+                    <button class="league-btn" data-league="ligue1">
+                        <span class="league-btn-emoji">🇫🇷</span>
+                        <span>Ligue 1</span>
+                    </button>
+                    <button class="league-btn" data-league="ucl">
+                        <span class="league-btn-emoji">⭐</span>
+                        <span>Champions League</span>
+                    </button>
+                    <button class="league-btn" data-league="europa">
+                        <span class="league-btn-emoji">🏆</span>
+                        <span>Europa League</span>
+                    </button>
+                </div>
             </nav>
 
             <div class="fixtures-container" id="fixtures-container">
@@ -2525,10 +4955,87 @@
 
         <!-- Main Content -->
         <main class="main-content" id="main-content">
-            <div class="empty-state">
-                <div class="empty-state-icon">📊</div>
-                <div class="empty-state-title">Select a Match</div>
-                <div class="empty-state-desc">Choose a match from the sidebar to view detailed analysis and predictions</div>
+            <!-- Welcome dashboard will be rendered by JS -->
+            <div class="welcome-dashboard" id="welcome-dashboard">
+                <div class="welcome-header">
+                    <h1 class="welcome-title">⚽ Football Analytics Dashboard</h1>
+                    <p class="welcome-subtitle">AI-powered match predictions with xG analysis, scoreline probabilities, and deep statistical insights</p>
+                </div>
+
+                <div class="dashboard-overview" id="dashboard-stats">
+                    <div class="overview-card">
+                        <div class="overview-icon">📅</div>
+                        <div class="overview-value" id="stat-fixtures">--</div>
+                        <div class="overview-label">Upcoming Matches</div>
+                    </div>
+                    <div class="overview-card">
+                        <div class="overview-icon">🤖</div>
+                        <div class="overview-value" id="stat-predictions">--</div>
+                        <div class="overview-label">Predictions Ready</div>
+                    </div>
+                    <div class="overview-card">
+                        <div class="overview-icon">🏆</div>
+                        <div class="overview-value" id="stat-leagues">7</div>
+                        <div class="overview-label">Leagues Covered</div>
+                    </div>
+                    <div class="overview-card">
+                        <div class="overview-icon">📊</div>
+                        <div class="overview-value" id="stat-accuracy">xG</div>
+                        <div class="overview-label">Model Type</div>
+                    </div>
+                </div>
+
+                <div class="welcome-features">
+                    <h3 class="section-title">📈 What You Get</h3>
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">🎯</div>
+                            <div class="feature-title">Win Probabilities</div>
+                            <div class="feature-desc">Poisson-based outcome predictions for home win, draw, and away win</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">⚡</div>
+                            <div class="feature-title">Expected Goals (xG)</div>
+                            <div class="feature-desc">Team xG calculations based on form, opponent strength, and historical data</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🎲</div>
+                            <div class="feature-title">Exact Scorelines</div>
+                            <div class="feature-desc">Top 8 most likely exact scores with probability percentages</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">📉</div>
+                            <div class="feature-title">Goals Markets</div>
+                            <div class="feature-desc">Over/Under and BTTS probabilities for betting insights</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">⚔️</div>
+                            <div class="feature-title">Head-to-Head</div>
+                            <div class="feature-desc">Historical matchup records and recent meeting results</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🤖</div>
+                            <div class="feature-title">Analysis</div>
+                            <div class="feature-desc">Deep analyst-style breakdown of key factors and matchup dynamics</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="welcome-cta">
+                    <div class="cta-icon">👈</div>
+                    <div class="cta-text">Select a match from the sidebar to view detailed analysis</div>
+                </div>
+
+                <!-- League Averages Section -->
+                <div class="league-averages-section" id="league-averages-section">
+                    <h3 class="section-title">📊 League Averages</h3>
+                    <div class="league-averages-grid" id="league-averages-grid">
+                        <div class="league-avg-loading">
+                            <div class="spinner"></div>
+                            <span>Loading league statistics...</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -2545,9 +5052,111 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            initializeTheme();
             setupLeagueNav();
             loadFixtures(state.currentLeague);
+            loadDashboardStats();
+            loadLeagueAverages(state.currentLeague);
         });
+
+        // Load league averages for dashboard
+        async function loadLeagueAverages(league) {
+            const container = document.getElementById('league-averages-grid');
+            if (!container) return;
+
+            // Set a timeout to show default values if API takes too long
+            const timeoutId = setTimeout(() => {
+                if (container.querySelector('.league-avg-loading')) {
+                    showDefaultLeagueStats(container);
+                }
+            }, 5000);
+
+            try {
+                const response = await fetch(`/api/league-stats/${league}`);
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const stats = data.stats || {};
+                    
+                    container.innerHTML = `
+                        <div class="league-avg-card">
+                            <div class="league-avg-value">${stats.goalsPerGame || '2.7'}</div>
+                            <div class="league-avg-label">Goals/Game</div>
+                        </div>
+                        <div class="league-avg-card">
+                            <div class="league-avg-value">${stats.homeWinPercentage || '45'}%</div>
+                            <div class="league-avg-label">Home Win Rate</div>
+                        </div>
+                        <div class="league-avg-card">
+                            <div class="league-avg-value">${stats.awayWinPercentage || '30'}%</div>
+                            <div class="league-avg-label">Away Win Rate</div>
+                        </div>
+                        <div class="league-avg-card">
+                            <div class="league-avg-value">${stats.drawPercentage || '25'}%</div>
+                            <div class="league-avg-label">Draw Rate</div>
+                        </div>
+                        <div class="league-avg-card">
+                            <div class="league-avg-value">${stats.bttsPercentage || '52'}%</div>
+                            <div class="league-avg-label">BTTS Rate</div>
+                        </div>
+                        <div class="league-avg-card">
+                            <div class="league-avg-value">${stats.over25Percentage || '55'}%</div>
+                            <div class="league-avg-label">Over 2.5 Rate</div>
+                        </div>
+                    `;
+                } else {
+                    showDefaultLeagueStats(container);
+                }
+            } catch (error) {
+                clearTimeout(timeoutId);
+                console.error('Error loading league averages:', error);
+                showDefaultLeagueStats(container);
+            }
+        }
+
+        // Show default league stats when API fails
+        function showDefaultLeagueStats(container) {
+            container.innerHTML = `
+                <div class="league-avg-card">
+                    <div class="league-avg-value">2.7</div>
+                    <div class="league-avg-label">Goals/Game</div>
+                </div>
+                <div class="league-avg-card">
+                    <div class="league-avg-value">45%</div>
+                    <div class="league-avg-label">Home Win Rate</div>
+                </div>
+                <div class="league-avg-card">
+                    <div class="league-avg-value">30%</div>
+                    <div class="league-avg-label">Away Win Rate</div>
+                </div>
+                <div class="league-avg-card">
+                    <div class="league-avg-value">25%</div>
+                    <div class="league-avg-label">Draw Rate</div>
+                </div>
+                <div class="league-avg-card">
+                    <div class="league-avg-value">52%</div>
+                    <div class="league-avg-label">BTTS Rate</div>
+                </div>
+                <div class="league-avg-card">
+                    <div class="league-avg-value">55%</div>
+                    <div class="league-avg-label">Over 2.5 Rate</div>
+                </div>
+            `;
+        }
+
+        // Load dashboard stats
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/health');
+                const health = await response.json();
+                
+                document.getElementById('stat-predictions').textContent = health.cache?.predictions || 0;
+                document.getElementById('stat-leagues').textContent = health.leagues?.length || 7;
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
+            }
+        }
 
         // Setup league navigation
         function setupLeagueNav() {
@@ -2556,10 +5165,103 @@
                     document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     state.currentLeague = btn.dataset.league;
+                    state.selectedFixture = null; // Reset selected fixture
                     loadFixtures(state.currentLeague);
+                    showWelcomeDashboard(); // Show welcome dashboard FIRST when switching leagues
+                    // Load league averages AFTER the dashboard is rendered
+                    setTimeout(() => loadLeagueAverages(state.currentLeague), 50);
                     closeSidebar();
                 });
             });
+        }
+
+        // Show welcome dashboard
+        function showWelcomeDashboard() {
+            const main = document.getElementById('main-content');
+            // Re-render the welcome dashboard
+            main.innerHTML = `
+                <div class="welcome-dashboard" id="welcome-dashboard">
+                    <div class="welcome-header">
+                        <h1 class="welcome-title">⚽ Football Analytics Dashboard</h1>
+                        <p class="welcome-subtitle">AI-powered match predictions with xG analysis, scoreline probabilities, and deep statistical insights</p>
+                    </div>
+
+                    <div class="dashboard-overview" id="dashboard-stats">
+                        <div class="overview-card">
+                            <div class="overview-icon">📅</div>
+                            <div class="overview-value" id="stat-fixtures">--</div>
+                            <div class="overview-label">Upcoming Matches</div>
+                        </div>
+                        <div class="overview-card">
+                            <div class="overview-icon">🤖</div>
+                            <div class="overview-value" id="stat-predictions">--</div>
+                            <div class="overview-label">Predictions Ready</div>
+                        </div>
+                        <div class="overview-card">
+                            <div class="overview-icon">🏆</div>
+                            <div class="overview-value" id="stat-leagues">7</div>
+                            <div class="overview-label">Leagues Covered</div>
+                        </div>
+                        <div class="overview-card">
+                            <div class="overview-icon">📊</div>
+                            <div class="overview-value" id="stat-accuracy">xG</div>
+                            <div class="overview-label">Model Type</div>
+                        </div>
+                    </div>
+
+                    <div class="welcome-features">
+                        <h3 class="section-title">📈 What You Get</h3>
+                        <div class="features-grid">
+                            <div class="feature-card">
+                                <div class="feature-icon">🎯</div>
+                                <div class="feature-title">Win Probabilities</div>
+                                <div class="feature-desc">Poisson-based outcome predictions for home win, draw, and away win</div>
+                            </div>
+                            <div class="feature-card">
+                                <div class="feature-icon">⚡</div>
+                                <div class="feature-title">Expected Goals (xG)</div>
+                                <div class="feature-desc">Team xG calculations based on form, opponent strength, and historical data</div>
+                            </div>
+                            <div class="feature-card">
+                                <div class="feature-icon">🎲</div>
+                                <div class="feature-title">Exact Scorelines</div>
+                                <div class="feature-desc">Top 8 most likely exact scores with probability percentages</div>
+                            </div>
+                            <div class="feature-card">
+                                <div class="feature-icon">📉</div>
+                                <div class="feature-title">Goals Markets</div>
+                                <div class="feature-desc">Over/Under and BTTS probabilities for betting insights</div>
+                            </div>
+                            <div class="feature-card">
+                                <div class="feature-icon">⚔️</div>
+                                <div class="feature-title">Head-to-Head</div>
+                                <div class="feature-desc">Historical matchup records and recent meeting results</div>
+                            </div>
+                            <div class="feature-card">
+                                <div class="feature-icon">🤖</div>
+                                <div class="feature-title">Analysis</div>
+                                <div class="feature-desc">Deep analyst-style breakdown of key factors and matchup dynamics</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="welcome-cta">
+                        <div class="cta-icon">👈</div>
+                        <div class="cta-text">Select a match from the sidebar to view detailed analysis</div>
+                    </div>
+
+                    <div class="league-averages-section" id="league-averages-section">
+                        <h3 class="section-title">📊 League Averages</h3>
+                        <div class="league-averages-grid" id="league-averages-grid">
+                            <div class="league-avg-loading">
+                                <div class="spinner"></div>
+                                <span>Loading league statistics...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            loadDashboardStats();
         }
 
         // Load fixtures
@@ -2578,6 +5280,12 @@
                 state.fixtures = fixtures;
 
                 document.getElementById('fixtures-count').textContent = fixtures.length;
+                
+                // Update dashboard stat
+                const fixturesStat = document.getElementById('stat-fixtures');
+                if (fixturesStat) {
+                    fixturesStat.textContent = fixtures.length;
+                }
 
                 if (fixtures.length === 0) {
                     container.innerHTML = `
@@ -2594,10 +5302,8 @@
                 // Check prediction status for all fixtures
                 checkPredictionStatuses(fixtures);
 
-                // Auto-select first fixture
-                if (fixtures.length > 0 && !state.selectedFixture) {
-                    selectFixture(fixtures[0]);
-                }
+                // Don't auto-select - let users see the dashboard first
+                // They can click a match when ready
             } catch (error) {
                 console.error('Error loading fixtures:', error);
                 container.innerHTML = `
@@ -2641,16 +5347,43 @@
             `;
         }
 
-        // Check prediction status for all fixtures
+        // Check prediction status for all fixtures and show mini stats
         async function checkPredictionStatuses(fixtures) {
+            let readyCount = 0;
+            
             for (const fixture of fixtures) {
                 try {
-                    const response = await fetch(`/api/predictions/${fixture.fixture.id}`, { method: 'HEAD' });
+                    const response = await fetch(`/api/predictions/${fixture.fixture.id}`);
                     const status = document.getElementById(`status-${fixture.fixture.id}`);
+                    const card = document.querySelector(`.fixture-card[data-id="${fixture.fixture.id}"]`);
+                    
                     if (status) {
                         if (response.ok) {
+                            readyCount++;
+                            const data = await response.json();
+                            const outcomes = data.calculatedMetrics?.predictions?.outcomes;
+                            
                             status.innerHTML = `<span class="status-dot"></span><span>Analysis Ready</span>`;
                             status.classList.remove('pending');
+                            
+                            // Add mini stats preview to the card
+                            if (outcomes && card) {
+                                const homeWin = parseFloat(outcomes.homeWin) || 0;
+                                const draw = parseFloat(outcomes.draw) || 0;
+                                const awayWin = parseFloat(outcomes.awayWin) || 0;
+                                
+                                let existingPreview = card.querySelector('.fixture-mini-stats');
+                                if (!existingPreview) {
+                                    const miniStats = document.createElement('div');
+                                    miniStats.className = 'fixture-mini-stats';
+                                    miniStats.innerHTML = `
+                                        <div class="mini-stat home" title="Home Win">${homeWin.toFixed(0)}%</div>
+                                        <div class="mini-stat draw" title="Draw">${draw.toFixed(0)}%</div>
+                                        <div class="mini-stat away" title="Away Win">${awayWin.toFixed(0)}%</div>
+                                    `;
+                                    card.insertBefore(miniStats, status);
+                                }
+                            }
                         } else {
                             status.innerHTML = `<span class="status-dot"></span><span>Pending</span>`;
                             status.classList.add('pending');
@@ -2658,7 +5391,18 @@
                     }
                 } catch (error) {
                     // Silently fail for status checks
+                    const status = document.getElementById(`status-${fixture.fixture.id}`);
+                    if (status) {
+                        status.innerHTML = `<span class="status-dot"></span><span>Pending</span>`;
+                        status.classList.add('pending');
+                    }
                 }
+            }
+            
+            // Update dashboard stat if element exists
+            const predStat = document.getElementById('stat-predictions');
+            if (predStat) {
+                predStat.textContent = readyCount;
             }
         }
 
@@ -2768,30 +5512,30 @@
 
                 <!-- KPI Grid -->
                 <div class="kpi-grid">
-                    <div class="kpi-card ${parseFloat(predictions.outcomes?.homeWin) > parseFloat(predictions.outcomes?.draw) && parseFloat(predictions.outcomes?.homeWin) > parseFloat(predictions.outcomes?.awayWin) ? 'kpi-highlight' : ''}">
-                        <div class="kpi-label">Home Win</div>
+                    <div class="kpi-card ${parseFloat(predictions.outcomes?.homeWin) > parseFloat(predictions.outcomes?.draw) && parseFloat(predictions.outcomes?.homeWin) > parseFloat(predictions.outcomes?.awayWin) ? 'kpi-highlight' : ''}" data-tooltip="Probability of home team winning">
+                        <div class="kpi-label">Home Win <span class="kpi-info">?</span></div>
                         <div class="kpi-value home">${predictions.outcomes?.homeWin || 'N/A'}%</div>
                     </div>
-                    <div class="kpi-card ${parseFloat(predictions.outcomes?.draw) > parseFloat(predictions.outcomes?.homeWin) && parseFloat(predictions.outcomes?.draw) > parseFloat(predictions.outcomes?.awayWin) ? 'kpi-highlight' : ''}">
-                        <div class="kpi-label">Draw</div>
+                    <div class="kpi-card ${parseFloat(predictions.outcomes?.draw) > parseFloat(predictions.outcomes?.homeWin) && parseFloat(predictions.outcomes?.draw) > parseFloat(predictions.outcomes?.awayWin) ? 'kpi-highlight' : ''}" data-tooltip="Probability of match ending in a draw">
+                        <div class="kpi-label">Draw <span class="kpi-info">?</span></div>
                         <div class="kpi-value draw">${predictions.outcomes?.draw || 'N/A'}%</div>
                     </div>
-                    <div class="kpi-card ${parseFloat(predictions.outcomes?.awayWin) > parseFloat(predictions.outcomes?.homeWin) && parseFloat(predictions.outcomes?.awayWin) > parseFloat(predictions.outcomes?.draw) ? 'kpi-highlight' : ''}">
-                        <div class="kpi-label">Away Win</div>
+                    <div class="kpi-card ${parseFloat(predictions.outcomes?.awayWin) > parseFloat(predictions.outcomes?.homeWin) && parseFloat(predictions.outcomes?.awayWin) > parseFloat(predictions.outcomes?.draw) ? 'kpi-highlight' : ''}" data-tooltip="Probability of away team winning">
+                        <div class="kpi-label">Away Win <span class="kpi-info">?</span></div>
                         <div class="kpi-value away">${predictions.outcomes?.awayWin || 'N/A'}%</div>
                     </div>
-                    <div class="kpi-card">
-                        <div class="kpi-label">Over 2.5 Goals</div>
+                    <div class="kpi-card" data-tooltip="Probability of 3+ total goals">
+                        <div class="kpi-label">Over 2.5 Goals <span class="kpi-info">?</span></div>
                         <div class="kpi-value">${predictions.overUnder?.over25 || 'N/A'}%</div>
                         <div class="kpi-subtitle">Under: ${predictions.overUnder?.under25 || 'N/A'}%</div>
                     </div>
-                    <div class="kpi-card">
-                        <div class="kpi-label">BTTS</div>
+                    <div class="kpi-card" data-tooltip="Both Teams To Score probability">
+                        <div class="kpi-label">BTTS <span class="kpi-info">?</span></div>
                         <div class="kpi-value">${predictions.btts?.probability || 'N/A'}%</div>
                         <div class="kpi-subtitle">Both Teams To Score</div>
                     </div>
-                    <div class="kpi-card">
-                        <div class="kpi-label">Expected Total</div>
+                    <div class="kpi-card" data-tooltip="Combined Expected Goals for both teams">
+                        <div class="kpi-label">Expected Total <span class="kpi-info">?</span></div>
                         <div class="kpi-value">${xG.totalExpected || 'N/A'}</div>
                         <div class="kpi-subtitle">Combined xG</div>
                     </div>
@@ -3020,6 +5764,20 @@
                         </div>
                     </div>
 
+                    <!-- Player Analysis Section -->
+                    <div class="dash-card span-12">
+                        <div class="dash-card-header">
+                            <span class="dash-card-title">
+                                <span class="dash-card-title-icon">👤</span>
+                                Player Analysis
+                            </span>
+                            <span class="dash-card-badge">Shot Maps & xG</span>
+                        </div>
+                        <div class="dash-card-body">
+                            ${renderPlayerAnalysis(data, fixture)}
+                        </div>
+                    </div>
+
                     <!-- AI Analysis -->
                     <div class="dash-card span-12">
                         <div class="dash-card-header">
@@ -3044,6 +5802,30 @@
 
             // Load bookmaker odds asynchronously
             loadBookmakerOdds(fixture);
+
+            // Set up player analysis tabs
+            setupPlayerAnalysisTabs();
+        }
+
+        // Set up player analysis tab switching
+        function setupPlayerAnalysisTabs() {
+            document.querySelectorAll('.player-analysis-container .analysis-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const container = this.closest('.player-analysis-container');
+                    const tabId = this.dataset.tab;
+                    
+                    // Update active tab
+                    container.querySelectorAll('.analysis-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update active content
+                    container.querySelectorAll('.analysis-tab-content').forEach(c => c.classList.remove('active'));
+                    const targetContent = container.querySelector('#tab-' + tabId);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                    }
+                });
+            });
         }
 
         // Load and render bookmaker odds
@@ -4106,7 +6888,7 @@
             return formatted;
         }
 
-        // Render no prediction state
+        // Render no prediction state - show skeleton preview of what analysis will contain
         function renderNoPrediction(fixture) {
             const main = document.getElementById('main-content');
             
@@ -4120,6 +6902,10 @@
                         <div class="match-meta-item">
                             <span>📅</span>
                             <span>${new Date(fixture.fixture.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                        </div>
+                        <div class="match-meta-item">
+                            <span>⏰</span>
+                            <span>${new Date(fixture.fixture.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                     </div>
                     <div class="match-teams-header">
@@ -4136,13 +6922,139 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="empty-state">
-                    <div class="empty-state-icon">⏳</div>
-                    <div class="empty-state-title">Prediction Not Available Yet</div>
-                    <div class="empty-state-desc">The analysis for this match is being generated. Check back soon!</div>
+
+                <!-- Pending Analysis Banner -->
+                <div class="pending-analysis-banner">
+                    <div class="pending-icon">⏳</div>
+                    <div class="pending-content">
+                        <div class="pending-title">Analysis Being Generated</div>
+                        <div class="pending-desc">Our AI model is processing match data including team form, player stats, xG metrics, and historical head-to-head results.</div>
+                    </div>
+                    <button class="generate-btn" onclick="requestAnalysis(${fixture.fixture.id})">
+                        <span>🚀</span> Generate Now
+                    </button>
+                </div>
+
+                <!-- Skeleton Preview - Show what will be available -->
+                <div class="skeleton-preview">
+                    <h3 class="skeleton-header">
+                        <span class="skeleton-icon">📊</span>
+                        Analysis Preview — What You'll Get
+                    </h3>
+                    
+                    <div class="kpi-grid skeleton-grid">
+                        <div class="kpi-card skeleton-card">
+                            <div class="kpi-label">Home Win</div>
+                            <div class="kpi-value skeleton-value">--.--%</div>
+                            <div class="skeleton-bar"></div>
+                        </div>
+                        <div class="kpi-card skeleton-card">
+                            <div class="kpi-label">Draw</div>
+                            <div class="kpi-value skeleton-value">--.--%</div>
+                            <div class="skeleton-bar"></div>
+                        </div>
+                        <div class="kpi-card skeleton-card">
+                            <div class="kpi-label">Away Win</div>
+                            <div class="kpi-value skeleton-value">--.--%</div>
+                            <div class="skeleton-bar"></div>
+                        </div>
+                        <div class="kpi-card skeleton-card">
+                            <div class="kpi-label">Over 2.5 Goals</div>
+                            <div class="kpi-value skeleton-value">--.--%</div>
+                            <div class="skeleton-bar"></div>
+                        </div>
+                        <div class="kpi-card skeleton-card">
+                            <div class="kpi-label">BTTS Probability</div>
+                            <div class="kpi-value skeleton-value">--.--%</div>
+                            <div class="skeleton-bar"></div>
+                        </div>
+                        <div class="kpi-card skeleton-card">
+                            <div class="kpi-label">Expected Goals</div>
+                            <div class="kpi-value skeleton-value">-.- vs -.-</div>
+                            <div class="skeleton-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">📈</div>
+                            <div class="feature-title">xG Analysis</div>
+                            <div class="feature-desc">Expected goals based on historical shot quality and conversion rates</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🎯</div>
+                            <div class="feature-title">Scoreline Predictions</div>
+                            <div class="feature-desc">Top 8 most likely exact scores with probability percentages</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">⚔️</div>
+                            <div class="feature-title">Head-to-Head</div>
+                            <div class="feature-desc">Historical matchup records and recent meeting results</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🔥</div>
+                            <div class="feature-title">Form Analysis</div>
+                            <div class="feature-desc">Recent performance trends and momentum indicators</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🏥</div>
+                            <div class="feature-title">Injury Impact</div>
+                            <div class="feature-desc">How missing players affect predicted outcomes</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🤖</div>
+                            <div class="feature-title">AI Deep Analysis</div>
+                            <div class="feature-desc">Professional analyst-style breakdown of key factors</div>
+                        </div>
+                    </div>
                 </div>
             `;
+        }
+
+        // Request analysis generation for a specific fixture
+        async function requestAnalysis(fixtureId) {
+            const btn = document.querySelector('.generate-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;"></span> Generating...';
+            }
+
+            try {
+                const response = await fetch(`/api/predictions/${fixtureId}/generate`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Reload the prediction
+                    const fixture = state.fixtures.find(f => f.fixture.id === fixtureId);
+                    if (fixture) {
+                        state.prediction = data;
+                        renderPrediction(fixture, data);
+                        
+                        // Update fixture status
+                        const status = document.getElementById(`status-${fixtureId}`);
+                        if (status) {
+                            status.innerHTML = `<span class="status-dot"></span><span>Analysis Ready</span>`;
+                            status.classList.remove('pending');
+                        }
+                    }
+                } else {
+                    const error = await response.json();
+                    alert(`Failed to generate analysis: ${error.message || 'Unknown error'}`);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<span>🚀</span> Generate Now';
+                    }
+                }
+            } catch (error) {
+                console.error('Error generating analysis:', error);
+                alert('Failed to generate analysis. Please try again.');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>🚀</span> Generate Now';
+                }
+            }
         }
 
         // Helper: truncate string
@@ -4198,6 +7110,24 @@
         }
 
         // ═══════════════════════════════════════════════════════════════
+        // LEAGUE NAV TOGGLE (COLLAPSIBLE)
+        // ═══════════════════════════════════════════════════════════════
+        function toggleLeagueNav() {
+            const leagueNav = document.getElementById('league-nav');
+            leagueNav.classList.toggle('collapsed');
+            // Save preference
+            localStorage.setItem('leagueNavCollapsed', leagueNav.classList.contains('collapsed'));
+        }
+
+        // Initialize league nav state from localStorage
+        function initLeagueNavState() {
+            const isCollapsed = localStorage.getItem('leagueNavCollapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('league-nav')?.classList.add('collapsed');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
         // THEME TOGGLE (DARK/LIGHT MODE)
         // ═══════════════════════════════════════════════════════════════
         function toggleTheme() {
@@ -4229,6 +7159,457 @@
 
         // Run theme initialization immediately
         initializeTheme();
+        initLeagueNavState();
+
+        // ═══════════════════════════════════════════════════════════════
+        // PLAYER ANALYSIS RENDERER - Key Players & Shooting Analysis
+        // ═══════════════════════════════════════════════════════════════
+        function renderPlayerAnalysis(data, fixture) {
+            const homeSquad = data?.squad?.home || data?.homeSquad || [];
+            const awaySquad = data?.squad?.away || data?.awaySquad || [];
+            const homeName = fixture?.teams?.home?.name || 'Home Team';
+            const awayName = fixture?.teams?.away?.name || 'Away Team';
+            const homeLogo = fixture?.teams?.home?.logo || '';
+            const awayLogo = fixture?.teams?.away?.logo || '';
+            
+            // Get injuries from match data
+            const homeInjuries = data?.injuries?.home || data?.homeInjuries || [];
+            const awayInjuries = data?.injuries?.away || data?.awayInjuries || [];
+            
+            // Create sets of injured player names for quick lookup
+            const homeInjuredNames = new Set(homeInjuries.map(i => i.player?.toLowerCase() || i.name?.toLowerCase()));
+            const awayInjuredNames = new Set(awayInjuries.map(i => i.player?.toLowerCase() || i.name?.toLowerCase()));
+
+            if (homeSquad.length === 0 && awaySquad.length === 0) {
+                return `
+                    <div class="player-analysis-empty">
+                        <span class="empty-icon">📊</span>
+                        <p>Player statistics not available for this match.</p>
+                        <p class="empty-subtitle">Squad data will be displayed when available from the API.</p>
+                    </div>
+                `;
+            }
+
+            // Check if player is injured
+            const isInjured = (player, injuredSet) => {
+                const playerName = player.name?.toLowerCase() || '';
+                // Check full name and partial matches
+                for (const injuredName of injuredSet) {
+                    if (playerName.includes(injuredName) || injuredName.includes(playerName.split(' ').pop())) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            // Get key attackers (players with shots, sorted by threat level) - EXCLUDING INJURED
+            const getKeyAttackers = (squad, injuredSet) => {
+                return squad
+                    .filter(p => {
+                        const isAttackerOrMid = (p.position === 'Attacker' || p.position === 'Midfielder');
+                        const hasShots = (p.shots || 0) > 0;
+                        const notInjured = !isInjured(p, injuredSet);
+                        return isAttackerOrMid && hasShots && notInjured;
+                    })
+                    .map(p => {
+                        const apps = p.appearances || 1;
+                        const shotsPerGame = (p.shots || 0) / apps;
+                        const sotPerGame = (p.shotsOn || 0) / apps;
+                        const goalsPerGame = (p.goals || 0) / apps;
+                        const shotAccuracy = p.shots > 0 ? ((p.shotsOn || 0) / p.shots) * 100 : 0;
+                        const conversionRate = p.shots > 0 ? ((p.goals || 0) / p.shots) * 100 : 0;
+                        const keyPassesPerGame = (p.keyPasses || 0) / apps;
+                        const assistsPerGame = (p.assists || 0) / apps;
+                        const duelsWonPerGame = (p.duelsWon || 0) / apps;
+                        const duelsWonPct = p.duelsTotal > 0 ? ((p.duelsWon || 0) / p.duelsTotal) * 100 : 0;
+                        const tacklesPerGame = (p.tackles || 0) / apps;
+                        const interceptionsPerGame = (p.interceptions || 0) / apps;
+                        
+                        // Threat score based on goals contribution
+                        const threatScore = (goalsPerGame * 5) + (sotPerGame * 2) + (shotsPerGame * 1) + (assistsPerGame * 3);
+                        
+                        return { 
+                            ...p, 
+                            shotsPerGame, 
+                            sotPerGame, 
+                            goalsPerGame, 
+                            shotAccuracy, 
+                            conversionRate, 
+                            keyPassesPerGame,
+                            assistsPerGame,
+                            duelsWonPerGame,
+                            duelsWonPct,
+                            tacklesPerGame,
+                            interceptionsPerGame,
+                            threatScore 
+                        };
+                    })
+                    .sort((a, b) => b.threatScore - a.threatScore)
+                    .slice(0, 4);
+            };
+
+            // Get set piece specialists (high key passes, aerial ability, or penalties)
+            const getSetPieceThreats = (squad, injuredSet) => {
+                return squad
+                    .filter(p => !isInjured(p, injuredSet))
+                    .map(p => {
+                        const apps = p.appearances || 1;
+                        const keyPassesPerGame = (p.keyPasses || 0) / apps;
+                        const aerialDuelsWon = p.duelsWon || 0;
+                        const hasHeaderGoals = (p.goals || 0) > 0 && (p.position === 'Defender');
+                        
+                        // Set piece threat indicators
+                        const isCornerTaker = keyPassesPerGame > 1.5;
+                        const isAerialThreat = p.position === 'Defender' && (p.goals || 0) >= 2;
+                        const isFreeKickTaker = keyPassesPerGame > 2 && (p.assists || 0) > 2;
+                        
+                        return {
+                            ...p,
+                            keyPassesPerGame,
+                            isCornerTaker,
+                            isAerialThreat,
+                            isFreeKickTaker,
+                            setPieceScore: (isCornerTaker ? 2 : 0) + (isAerialThreat ? 3 : 0) + (isFreeKickTaker ? 2 : 0)
+                        };
+                    })
+                    .filter(p => p.setPieceScore > 0)
+                    .sort((a, b) => b.setPieceScore - a.setPieceScore)
+                    .slice(0, 3);
+            };
+
+            // Get creative players (high key passes and assists)
+            const getCreators = (squad, injuredSet) => {
+                return squad
+                    .filter(p => !isInjured(p, injuredSet) && (p.keyPasses || 0) > 5)
+                    .map(p => {
+                        const apps = p.appearances || 1;
+                        return {
+                            ...p,
+                            keyPassesPerGame: (p.keyPasses || 0) / apps,
+                            assistsPerGame: (p.assists || 0) / apps,
+                            creativityScore: ((p.keyPasses || 0) / apps) + ((p.assists || 0) * 2)
+                        };
+                    })
+                    .sort((a, b) => b.creativityScore - a.creativityScore)
+                    .slice(0, 2);
+            };
+
+            const homeAttackers = getKeyAttackers(homeSquad, homeInjuredNames);
+            const awayAttackers = getKeyAttackers(awaySquad, awayInjuredNames);
+            const homeSetPiece = getSetPieceThreats(homeSquad, homeInjuredNames);
+            const awaySetPiece = getSetPieceThreats(awaySquad, awayInjuredNames);
+            const homeCreators = getCreators(homeSquad, homeInjuredNames);
+            const awayCreators = getCreators(awaySquad, awayInjuredNames);
+
+            // Determine playstyle based on stats
+            const getPlaystyle = (player) => {
+                const shotAccuracy = player.shotAccuracy || 0;
+                const shotsPerGame = player.shotsPerGame || 0;
+                const keyPassesPerGame = player.keyPassesPerGame || 0;
+                const conversionRate = player.conversionRate || 0;
+                
+                if (conversionRate > 20 && shotsPerGame > 0.8) return { style: 'Clinical Finisher', icon: '🎯', desc: 'High conversion rate - makes chances count' };
+                if (shotsPerGame > 2 && shotAccuracy < 40) return { style: 'Volume Shooter', icon: '🔫', desc: 'Takes many shots, creates through volume' };
+                if (keyPassesPerGame > 1.8) return { style: 'Playmaker', icon: '🎨', desc: 'Creates chances for teammates' };
+                if (shotsPerGame > 1.5 && shotAccuracy > 50) return { style: 'Sharp Shooter', icon: '🎪', desc: 'Accurate and dangerous' };
+                if (player.position === 'Attacker' && conversionRate > 15) return { style: 'Poacher', icon: '🦊', desc: 'Clinical in the box' };
+                if (player.position === 'Midfielder') return { style: 'Box-to-Box', icon: '🔄', desc: 'Contributes in attack and defense' };
+                return { style: 'Versatile', icon: '⚡', desc: 'Well-rounded attacker' };
+            };
+
+            // Generate attacker analysis card - comprehensive stats
+            const generateAttackerCard = (attacker, teamClass) => {
+                const playstyle = getPlaystyle(attacker);
+                
+                return `
+                    <div class="attacker-card ${teamClass}">
+                        <div class="attacker-header">
+                            <img src="${attacker.photo || ''}" alt="${attacker.name}" class="attacker-photo" onerror="this.style.display='none'">
+                            <div class="attacker-info">
+                                <span class="attacker-name">${attacker.name}</span>
+                                <span class="attacker-position">${attacker.position} • #${attacker.number || '-'}</span>
+                            </div>
+                            <div class="playstyle-badge" title="${playstyle.desc}">
+                                <span class="playstyle-icon">${playstyle.icon}</span>
+                                <span class="playstyle-name">${playstyle.style}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Shooting Stats -->
+                        <div class="stats-section">
+                            <div class="stats-section-title">🔫 Shooting</div>
+                            <div class="shooting-stats">
+                                <div class="shooting-stat">
+                                    <div class="stat-bar-container">
+                                        <div class="stat-bar-fill" style="width: ${Math.min(attacker.shotsPerGame / 3 * 100, 100)}%; background: var(--home-color);"></div>
+                                    </div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Shots/Game</span>
+                                        <span class="stat-value">${attacker.shotsPerGame.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                                <div class="shooting-stat">
+                                    <div class="stat-bar-container">
+                                        <div class="stat-bar-fill" style="width: ${Math.min(attacker.sotPerGame / 1.5 * 100, 100)}%; background: var(--accent-success);"></div>
+                                    </div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">On Target/Game</span>
+                                        <span class="stat-value">${attacker.sotPerGame.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                                <div class="shooting-stat">
+                                    <div class="stat-bar-container">
+                                        <div class="stat-bar-fill" style="width: ${attacker.shotAccuracy}%; background: var(--accent-warning);"></div>
+                                    </div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Shot Accuracy</span>
+                                        <span class="stat-value">${attacker.shotAccuracy.toFixed(0)}%</span>
+                                    </div>
+                                </div>
+                                <div class="shooting-stat">
+                                    <div class="stat-bar-container">
+                                        <div class="stat-bar-fill" style="width: ${Math.min(attacker.conversionRate * 3, 100)}%; background: var(--accent-danger);"></div>
+                                    </div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Conversion Rate</span>
+                                        <span class="stat-value">${attacker.conversionRate.toFixed(1)}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Creativity & Duels Stats -->
+                        <div class="stats-section">
+                            <div class="stats-section-title">🎨 Creativity & Physicality</div>
+                            <div class="shooting-stats">
+                                <div class="shooting-stat">
+                                    <div class="stat-bar-container">
+                                        <div class="stat-bar-fill" style="width: ${Math.min(attacker.keyPassesPerGame / 2.5 * 100, 100)}%; background: #8b5cf6;"></div>
+                                    </div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Key Passes/Game</span>
+                                        <span class="stat-value">${attacker.keyPassesPerGame.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                                <div class="shooting-stat">
+                                    <div class="stat-bar-container">
+                                        <div class="stat-bar-fill" style="width: ${Math.min(attacker.duelsWonPerGame / 6 * 100, 100)}%; background: #06b6d4;"></div>
+                                    </div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Duels Won/Game</span>
+                                        <span class="stat-value">${attacker.duelsWonPerGame.toFixed(1)}</span>
+                                    </div>
+                                </div>
+                                <div class="shooting-stat">
+                                    <div class="stat-bar-container">
+                                        <div class="stat-bar-fill" style="width: ${attacker.duelsWonPct}%; background: #14b8a6;"></div>
+                                    </div>
+                                    <div class="stat-info">
+                                        <span class="stat-label">Duel Success Rate</span>
+                                        <span class="stat-value">${attacker.duelsWonPct.toFixed(0)}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Season Totals -->
+                        <div class="season-numbers">
+                            <div class="season-stat">
+                                <span class="season-val">${attacker.goals || 0}</span>
+                                <span class="season-label">Goals</span>
+                            </div>
+                            <div class="season-stat">
+                                <span class="season-val">${attacker.assists || 0}</span>
+                                <span class="season-label">Assists</span>
+                            </div>
+                            <div class="season-stat">
+                                <span class="season-val">${attacker.keyPasses || 0}</span>
+                                <span class="season-label">Key Passes</span>
+                            </div>
+                            <div class="season-stat">
+                                <span class="season-val">${attacker.duelsWon || 0}</span>
+                                <span class="season-label">Duels Won</span>
+                            </div>
+                            <div class="season-stat">
+                                <span class="season-val">${attacker.shots || 0}</span>
+                                <span class="season-label">Shots</span>
+                            </div>
+                            <div class="season-stat">
+                                <span class="season-val">${attacker.appearances || 0}</span>
+                                <span class="season-label">Apps</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            };
+
+            // Generate injury list
+            const generateInjuryList = (injuries, teamName) => {
+                if (!injuries || injuries.length === 0) {
+                    return `<span class="no-injuries">✅ No reported injuries</span>`;
+                }
+                
+                return injuries.map(inj => `
+                    <div class="injury-item">
+                        <span class="injury-player">❌ ${inj.player || inj.name}</span>
+                        <span class="injury-reason">${inj.reason || 'Unavailable'}</span>
+                    </div>
+                `).join('');
+            };
+
+            // Generate team analysis section
+            const generateTeamSection = (teamName, teamLogo, attackers, creators, setPiece, teamClass) => {
+                return `
+                    <div class="team-analysis-section ${teamClass}">
+                        <div class="team-analysis-header">
+                            <img src="${teamLogo}" alt="" class="analysis-team-logo" onerror="this.style.display='none'">
+                            <span class="analysis-team-name">${teamName}</span>
+                        </div>
+
+                        <!-- Key Attackers -->
+                        <div class="analysis-subsection">
+                            <h4 class="subsection-title">
+                                <span class="subsection-icon">⚔️</span>
+                                Key Attacking Threats
+                            </h4>
+                            <div class="attackers-grid">
+                                ${attackers.length > 0 
+                                    ? attackers.map(a => generateAttackerCard(a, teamClass)).join('')
+                                    : '<p class="no-data">No attacking data available</p>'}
+                            </div>
+                        </div>
+
+                        <!-- Creative Players -->
+                        ${creators.length > 0 ? `
+                        <div class="analysis-subsection">
+                            <h4 class="subsection-title">
+                                <span class="subsection-icon">🎨</span>
+                                Creative Hub
+                            </h4>
+                            <div class="creators-row">
+                                ${creators.map(c => `
+                                    <div class="creator-card">
+                                        <img src="${c.photo || ''}" alt="${c.name}" class="creator-photo" onerror="this.style.display='none'">
+                                        <div class="creator-info">
+                                            <span class="creator-name">${c.name}</span>
+                                            <div class="creator-stats">
+                                                <span class="creator-stat">${c.keyPassesPerGame.toFixed(1)} key passes/game</span>
+                                                <span class="creator-stat">${c.assists || 0} assists</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- Set Piece Threats -->
+                        ${setPiece.length > 0 ? `
+                        <div class="analysis-subsection">
+                            <h4 class="subsection-title">
+                                <span class="subsection-icon">🎯</span>
+                                Set Piece Threats
+                            </h4>
+                            <div class="setpiece-row">
+                                ${setPiece.map(p => `
+                                    <div class="setpiece-player">
+                                        <span class="setpiece-name">${p.name}</span>
+                                        <div class="setpiece-tags">
+                                            ${p.isCornerTaker ? '<span class="setpiece-tag">Corner Taker</span>' : ''}
+                                            ${p.isAerialThreat ? '<span class="setpiece-tag aerial">Aerial Threat</span>' : ''}
+                                            ${p.isFreeKickTaker ? '<span class="setpiece-tag freekick">Free Kicks</span>' : ''}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            };
+
+            // Generate combined injury report
+            const generateInjuryReport = () => {
+                const hasHomeInjuries = homeInjuries && homeInjuries.length > 0;
+                const hasAwayInjuries = awayInjuries && awayInjuries.length > 0;
+                
+                if (!hasHomeInjuries && !hasAwayInjuries) {
+                    return `
+                        <div class="injury-report-section">
+                            <h4 class="injury-report-title">
+                                <span class="subsection-icon">🏥</span>
+                                Injury Report
+                            </h4>
+                            <div class="injury-report-content all-clear">
+                                <span class="all-clear-icon">✅</span>
+                                <span>No injuries reported for either team</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="injury-report-section">
+                        <h4 class="injury-report-title">
+                            <span class="subsection-icon">🏥</span>
+                            Injury Report
+                        </h4>
+                        <div class="injury-report-grid">
+                            <div class="injury-team-column">
+                                <div class="injury-team-header">
+                                    <img src="${homeLogo}" alt="" class="injury-team-logo" onerror="this.style.display='none'">
+                                    <span>${homeName}</span>
+                                </div>
+                                <div class="injuries-list">
+                                    ${hasHomeInjuries 
+                                        ? homeInjuries.map(inj => `
+                                            <div class="injury-item">
+                                                <span class="injury-player">❌ ${inj.player || inj.name}</span>
+                                                <span class="injury-reason">${inj.reason || 'Unavailable'}</span>
+                                            </div>
+                                        `).join('')
+                                        : '<span class="no-injuries">✅ No injuries</span>'
+                                    }
+                                </div>
+                            </div>
+                            <div class="injury-team-column">
+                                <div class="injury-team-header">
+                                    <img src="${awayLogo}" alt="" class="injury-team-logo" onerror="this.style.display='none'">
+                                    <span>${awayName}</span>
+                                </div>
+                                <div class="injuries-list">
+                                    ${hasAwayInjuries 
+                                        ? awayInjuries.map(inj => `
+                                            <div class="injury-item">
+                                                <span class="injury-player">❌ ${inj.player || inj.name}</span>
+                                                <span class="injury-reason">${inj.reason || 'Unavailable'}</span>
+                                            </div>
+                                        `).join('')
+                                        : '<span class="no-injuries">✅ No injuries</span>'
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            };
+
+            return `
+                <div class="player-analysis-wrapper">
+                    <div class="analysis-intro">
+                        <p>Key players analyzed for this match. Injured players are excluded from the analysis. Stats based on season appearances.</p>
+                    </div>
+
+                    <!-- Injury Report at Top -->
+                    ${generateInjuryReport()}
+
+                    <div class="teams-analysis-grid">
+                        ${generateTeamSection(homeName, homeLogo, homeAttackers, homeCreators, homeSetPiece, 'home')}
+                        ${generateTeamSection(awayName, awayLogo, awayAttackers, awayCreators, awaySetPiece, 'away')}
+                    </div>
+                </div>
+            `;
+        }
 
         // ═══════════════════════════════════════════════════════════════
         // PREDICTION METHODOLOGY RENDERER
